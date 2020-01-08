@@ -24,8 +24,8 @@ if the file is bigger than 1024 bytes then the func enters a loop which reads an
 """
 def send_file(client_socket, file_location):
     if os.path.exists(file_location):
-        client_socket.send(CONFIRMATION + os.path.getsize(File_Location))
-        user_answer = client_sock.recv(1024)
+        client_socket.send(CONFIRMATION + os.path.getsize(file_location))
+        user_answer = client_socket.recv(1024)
         if user_answer[:2] == CONFIRMATION:
             with open(file_location, 'rb') as f:
                 file_parts = f.read(1024)
@@ -50,20 +50,23 @@ the function joins the directory plus the new file name and then uses the func "
 def change_file_name(client_socket, file_location, new_file_name):
     if os.path.exists(file_location):
         client_socket.send(CONFIRMATION)
-        file_path = os.path.dirname(file_location)
-        new_file_location = file_path.join(file_path, new_file_name)
+        file_dir = os.path.dirname(file_location)
+        new_file_location = file_dir.join(file_dir, new_file_name)
         os.rename(file_location,new_file_location)
     else:
         client_socket.send(ERROR)
     client_socket.close()
 
+
 def main():
     s = socket.socket()
     s.bind((HOST, PORT))
     s.listen(5)
+    print("server started")
 
-    print "server started"
-    while True:
+
+if __name__ == "main":
+    main()
         
 
 
