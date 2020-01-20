@@ -57,9 +57,24 @@ def delete_file(client_socket, file_location):
 
 
 def handel_thread(connection, ip, port, max_buffer_size=5120):
-    while True:
+    active = True
+    while active:
         client_input = receive_input(connection, max_buffer_size)
-
+        if "QUIT" in client_input:
+            print("Client is requesting to quit")
+            connection.close()
+            message = "Connection " + ip + ": " + port + " closed"
+            print(message)
+            is_active = False
+        if "SEND_FILE" in client_input:
+            #extract file location from client_input
+            send_file(connection,file_location)
+        if "DELETE" in client_input:
+            #extract file location from client_input
+            delete_file(connection, file_location)
+        if "CHANGE_NAME" in client_input:
+            #extract file location from client info
+            change_file_name(connection, file_location)
 
 def receive_input(connection, max_buffer_size):
     client_input = connection.recv(max_buffer_size)
@@ -72,7 +87,7 @@ def receive_input(connection, max_buffer_size):
             temp = connection.recv(max_buffer_size)
             client_input += temp
     decoded_input = client_input.decode("utf8").rstrip()  # decode and strip end of line
-    result = process_input(decoded_input)
+    result = str(decoded_input).upper()
 
     return result
 
@@ -101,7 +116,7 @@ def main():
 
         try:
             """sends the threads to a func that checks their requests and redirects them"""
-            Thread(target=handle_thread, args=(connection, ip, port)).start()
+            threading.Thread(target=handle_thread, args=(connection, ip, port)).start()
         except:
             print("Thread did not start.")
 
