@@ -83,6 +83,11 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             file_location = client_input[0]
             new_file_name = client_input[1]
             change_file_name(connection, file_location, new_file_name)
+        else:
+            connection.send("oh oh something went wrong")
+            print("there is a problem with the input")
+            connection.close()
+            active = False
 
 
 def receive_input(connection, max_buffer_size):
