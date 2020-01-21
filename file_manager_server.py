@@ -9,7 +9,11 @@ ALL_IP = '0.0.0.0'
 ERROR = 300
 RESPONSE = 200
 REQUEST = 100   # server asks the client for data
-CONFIRMATION = 10
+SEND = 40
+CHANGE_NAME = 30
+DELETE = 20
+EXIT = 10
+CONFIRMATION = 1
 
 
 def send_file(client_socket, file_location):
@@ -40,7 +44,7 @@ def change_file_name(client_socket, file_location, new_file_name):
         dir_path = os.path.dirname(file_location)
         """creates a new path with the directory, back slash and the new file name"""
         new_path = dir_path + "\\" + new_file_name
-        """the func rename basiclly copies the original just with a difrent name"""
+        """the func rename basiclly copies the original just with a diffrent name"""
         os.rename(file_location, new_path)
     else:
         client_socket.send(ERROR)
@@ -60,21 +64,26 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
     active = True
     while active:
         client_input = receive_input(connection, max_buffer_size)
-        if "QUIT" in client_input:
+        if client_input[3:] == EXIT:
             print("Client is requesting to quit")
             connection.close()
             message = "Connection " + ip + ": " + port + " closed"
             print(message)
             is_active = False
-        if "SEND_FILE" in client_input:
-            #extract file location from client_input
-            send_file(connection,file_location)
-        if "DELETE" in client_input:
-            #extract file location from client_input
+        if client_input[3:] == SEND:
+            file_location = client_input[3:]
+            send_file(connection, file_location)
+        if client_input[3:] == DELETE:
+            file_location = client_input[3:]
             delete_file(connection, file_location)
-        if "CHANGE_NAME" in client_input:
-            #extract file location from client info
-            change_file_name(connection, file_location)
+        if client_input[3:] == CHANGE_NAME:
+            """splits the client info using the '@' in between the file path and the new name"""
+            client_input = client_input[3:]
+            client_input.split('@')
+            file_location = client_input[0]
+            new_file_name = client_input[1]
+            change_file_name(connection, file_location, new_file_name)
+
 
 def receive_input(connection, max_buffer_size):
     client_input = connection.recv(max_buffer_size)
@@ -116,7 +125,7 @@ def main():
 
         try:
             """sends the threads to a func that checks their requests and redirects them"""
-            threading.Thread(target=handle_thread, args=(connection, ip, port)).start()
+            threading.Thread(target=handel_thread, args=(connection, ip, port)).start()
         except:
             print("Thread did not start.")
 
