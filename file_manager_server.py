@@ -3,6 +3,7 @@ import threading
 import os
 import sys
 
+DICT = {'ERROR': "300".encode(), 'RESPONSE': "200".encode(), 'REQUEST': "100".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10", 'CONFIRMATION': "1".encode()}
 
 PORT = 6543
 HOST = '127.0.0.1'
@@ -65,11 +66,10 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
     active = True
     client_input = receive_input(connection, max_buffer_size)
     while active:
-        if client_input[3:] == EXIT:
+        if client_input == DICT['EXIT']:
             print("Client is requesting to quit")
             connection.close()
-            message = "Connection " + ip + ": " + port + " closed"
-            print(message)
+            print("Connection " + ip + ": " + port + " closed")
             is_active = False
         if client_input[3:] == SEND_FILE:
             file_location = client_input[3:]
