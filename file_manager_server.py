@@ -9,7 +9,7 @@ ALL_IP = '0.0.0.0'
 ERROR = 300
 RESPONSE = 200
 REQUEST = 100   # server asks the client for data
-SEND = 40
+SEND_FILE = 40
 CHANGE_NAME = 30
 DELETE = 20
 EXIT = 10
@@ -31,52 +31,58 @@ def send_file(client_socket, file_location):
                     client_socket.send(file_parts)
         else:
             client_socket.send(ERROR)
-            client_socket.close()
+            #client_socket.justatest()
     else:
         client_socket.send(ERROR)
-    client_socket.close()
+    #client_socket.justatest()
 
 
 def change_file_name(client_socket, file_location, new_file_name):
     if os.path.exists(file_location):
-        client_socket.send(CONFIRMATION)
         """gets the dir of the file with dirname"""
         dir_path = os.path.dirname(file_location)
         """creates a new path with the directory, back slash and the new file name"""
         new_path = dir_path + "\\" + new_file_name
         """the func rename basiclly copies the original just with a diffrent name"""
         os.rename(file_location, new_path)
+        client_socket.send(CONFIRMATION)
     else:
         client_socket.send(ERROR)
-    client_socket.close()
+    #client_socket.justatest()
 
 
 def delete_file(client_socket, file_location):
     if os.path.exists(file_location):
-        client_socket.send(CONFIRMATION)
         os.remove(file_location)
+        client_socket.send(str(CONFIRMATION).encode())
     else:
-        client_socket.send(ERROR)
-    client_socket.close()
+        print(type(client_socket))
+        client_socket.send(str(ERROR).encode())
+        client_socket.send("got here".encode())
+    #client_socket.justatest()
 
 
 def handel_thread(connection, ip, port, max_buffer_size=5120):
     active = True
     while active:
         client_input = receive_input(connection, max_buffer_size)
-        if client_input[3:] == EXIT:
+        print(client_input)
+        print(type(client_input))
+        print(connection)
+        if client_input == str(EXIT):
             print("Client is requesting to quit")
             connection.close()
             message = "Connection " + ip + ": " + port + " closed"
             print(message)
-            is_active = False
-        if client_input[3:] == SEND:
+            active = False
+        elif client_input[:2] == str(SEND_FILE):
             file_location = client_input[3:]
             send_file(connection, file_location)
-        elif client_input[3:] == 'DELETE':
-            file_location = client_input[3:]
+        elif client_input[:2] == str(DELETE):
+            file_location = client_input[2:]
+            print(file_location)
             delete_file(connection, file_location)
-        elif client_input[3:] == CHANGE_NAME:
+        elif client_input[:2] == str(CHANGE_NAME):
             """splits the client info using the '@' in between the file path and the new name"""
             client_input = client_input[3:]
             client_input.split('@')
@@ -84,7 +90,7 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             new_file_name = client_input[1]
             change_file_name(connection, file_location, new_file_name)
         else:
-            connection.send("oh oh something went wrong")
+            connection.send("oh oh something went wrong".encode())
             print("there is a problem with the input")
             connection.close()
             active = False
@@ -101,9 +107,7 @@ def receive_input(connection, max_buffer_size):
             temp = connection.recv(max_buffer_size)
             client_input += temp
     decoded_input = client_input.decode("utf8").rstrip()  # decode and strip end of line
-    result = str(decoded_input).upper()
-
-    return result
+    return decoded_input
 
 
 def main():
