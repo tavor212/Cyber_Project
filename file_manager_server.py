@@ -31,10 +31,8 @@ def send_file(client_socket, file_location):
                     client_socket.send(file_parts)
         else:
             client_socket.send(ERROR)
-            #client_socket.justatest()
     else:
         client_socket.send(ERROR)
-    #client_socket.justatest()
 
 
 def change_file_name(client_socket, file_location, new_file_name):
@@ -48,7 +46,6 @@ def change_file_name(client_socket, file_location, new_file_name):
         client_socket.send(CONFIRMATION)
     else:
         client_socket.send(ERROR)
-    #client_socket.justatest()
 
 
 def delete_file(client_socket, file_location):
@@ -59,7 +56,6 @@ def delete_file(client_socket, file_location):
         print(type(client_socket))
         client_socket.send(str(ERROR).encode())
         client_socket.send("got here".encode())
-    #client_socket.justatest()
 
 
 def handel_thread(connection, ip, port, max_buffer_size=5120):
@@ -76,7 +72,7 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             print(message)
             active = False
         elif client_input[:2] == str(SEND_FILE):
-            file_location = client_input[3:]
+            file_location = client_input[2:]
             send_file(connection, file_location)
         elif client_input[:2] == str(DELETE):
             file_location = client_input[2:]
@@ -84,7 +80,7 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             delete_file(connection, file_location)
         elif client_input[:2] == str(CHANGE_NAME):
             """splits the client info using the '@' in between the file path and the new name"""
-            client_input = client_input[3:]
+            client_input = client_input[2:]
             client_input.split('@')
             file_location = client_input[0]
             new_file_name = client_input[1]
