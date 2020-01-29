@@ -21,14 +21,28 @@ def main():
     print("'Delete' - will delete the file in the path you will give")
     print("'EXIT' - will exit the program :(")
     print("What would you like me to do?\n")
-    message = input()
 
     active = True
     while active:
-        if message == "EXIT":
+        message = input()
+        if message.upper() == "EXIT":
             active = False
             print("ok bye :(")
             s.send(DICT['EXIT'])
+        elif message.upper() == "SEND FILE":
+            pass
+        elif message.upper() == "DELETE":
+            print("What is the file path?")
+            message = DICT['DELETE']+input().encode()
+            s.send(message)
+            message = s.recv(1024)
+            print(message)
+            if message == DICT['CONFIRMATION']:
+                print("The file was deleted!!")
+        elif message.upper() == "CHANGE NAME":
+            pass
+        else:
+            print("there is a problem with your input, please try again")
 
 
 if __name__ == "__main__":
