@@ -16,14 +16,14 @@ def main():
 
     print("Hello \nWelcome to my amazing file management program. you wont find any other in the market :)")
     print("At your disposal are 3 main tools.")
-    print("'Send File' - a function that with a given path will send you a file from the server to your computer")
-    print("'Change Name' - a function that with a given path the a file, will change its name with a name you will give")
-    print("'Delete' - will delete the file in the path you will give")
-    print("'EXIT' - will exit the program :(")
     print("What would you like me to do?\n")
 
     active = True
     while active:
+        print("'Send File' - a function that with a given path will send you a file from the server to your computer")
+        print("'Change Name' - a function that with a given path the a file, will change its name with a name you give")
+        print("'Delete' - will delete the file in the path you will give")
+        print("'EXIT' - will exit the program :(")
         message = input()
         if message.upper() == "EXIT":
             active = False
@@ -36,9 +36,10 @@ def main():
             message = DICT['DELETE']+input().encode()
             s.send(message)
             message = s.recv(1024)
-            print(message)
             if message == DICT['CONFIRMATION']:
-                print("The file was deleted!!")
+                print("The file was deleted!!\n")
+            if message == DICT['ERROR']:
+                print("oh oh something went wrong\n")
         elif message.upper() == "CHANGE NAME":
             pass
         else:
