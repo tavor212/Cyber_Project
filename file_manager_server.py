@@ -73,10 +73,10 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
         if client_input[3:] == SEND:
             file_location = client_input[3:]
             send_file(connection, file_location)
-        elif client_input[3:] == DICT['DELETE']:
+        elif client_input[3:] == 'DELETE':
             file_location = client_input[3:]
             delete_file(connection, file_location)
-        elif client_input[3:] == DICT['CHANGE_NAME']:
+        elif client_input[3:] == CHANGE_NAME:
             """splits the client info using the '@' in between the file path and the new name"""
             client_input = client_input[3:]
             client_input.split('@')
