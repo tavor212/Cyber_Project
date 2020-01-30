@@ -18,21 +18,21 @@ CONFIRMATION = 1
 
 def send_file(client_socket, file_location):
     if os.path.exists(file_location):
-        client_socket.send(CONFIRMATION + os.path.getsize(file_location))
-        user_answer = client_socket.recv(5120)
-        if user_answer[:2] == CONFIRMATION:
+        client_socket.send((str(CONFIRMATION)).encode() + (str(os.path.getsize(file_location))).encode())
+        user_answer = client_socket.recv(1024)
+        if user_answer[:1] == (str(CONFIRMATION)).encode():
             """reads the file 5120 bytes at a time."""
             with open(file_location, 'rb') as f:
                 file_parts = f.read(5120)
                 client_socket.send(file_parts)
                 """if the file is bigger than 1024 bytes then the func reads another 1024 bytes and checks if the file is empty"""
                 while os.path.getsize(file_location) != "":
-                    file_parts = f.read(1024)
+                    file_parts = f.read(5120)
                     client_socket.send(file_parts)
         else:
-            client_socket.send(ERROR)
+            client_socket.send((str(ERROR)).encode())
     else:
-        client_socket.send(ERROR)
+        client_socket.send((str(ERROR)).encode())
 
 
 def change_file_name(client_socket, file_location, new_file_name):
@@ -43,9 +43,9 @@ def change_file_name(client_socket, file_location, new_file_name):
         new_path = dir_path + "\\" + new_file_name
         """the func rename basiclly copies the original just with a diffrent name"""
         os.rename(file_location, new_path)
-        client_socket.send(CONFIRMATION)
+        client_socket.send((str(CONFIRMATION)).encode())
     else:
-        client_socket.send(ERROR)
+        client_socket.send((str(ERROR)).encode())
 
 
 def delete_file(client_socket, file_location):
@@ -53,9 +53,7 @@ def delete_file(client_socket, file_location):
         os.remove(file_location)
         client_socket.send(str(CONFIRMATION).encode())
     else:
-        print(type(client_socket))
         client_socket.send(str(ERROR).encode())
-        client_socket.send("got here".encode())
 
 
 def handel_thread(connection, ip, port, max_buffer_size=5120):
@@ -67,6 +65,7 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
         print(connection)
         if client_input == str(EXIT):
             print("Client is requesting to quit")
+            connection.send((str(EXIT)).encode())
             connection.close()
             message = "Connection " + ip + ": " + port + " closed"
             print(message)
@@ -79,9 +78,9 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             print(file_location)
             delete_file(connection, file_location)
         elif client_input[:2] == str(CHANGE_NAME):
-            """splits the client info using the '@' in between the file path and the new name"""
+            """splits the client info using the ' ' in between the file path and the new name"""
             client_input = client_input[2:]
-            client_input.split('@')
+            client_input = client_input.split(" ")
             file_location = client_input[0]
             new_file_name = client_input[1]
             change_file_name(connection, file_location, new_file_name)
@@ -134,7 +133,7 @@ def main():
         except:
             print("Thread did not start.")
 
-    soc.close()
+    s.close()
 
 
 if __name__ == '__main__':
