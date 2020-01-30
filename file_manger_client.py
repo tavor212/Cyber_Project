@@ -41,10 +41,17 @@ def main():
             message = s.recv(1024)
             if message[:1] == DICT['CONFIRMATION']:
                 message = message[1:].decode()
-                print(message + '\n' + "This is the file size. Do you still want to download?")
+                message = int(message)
+                message = message/1000
+                message = str(message)
+                print(message + "M" + '\n' + "This is the file size. Do you still want to download?")
                 answer = input()
                 if answer.upper() == "YES":
                     s.send(DICT['CONFIRMATION'])
+                    while s.recv(1024) != "":
+                        s.recv(5120)
+                        if s.recv(1024) == DICT['CONFIRMATION']:
+                            print("The file was succsfuly transfered")
                 elif answer.upper() == "NO":
                     print("Ok. Cancelling...")
                 else:
