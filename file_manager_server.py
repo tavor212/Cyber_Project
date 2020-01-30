@@ -29,6 +29,7 @@ def send_file(client_socket, file_location):
                 while os.path.getsize(file_location) != "":
                     file_parts = f.read(5120)
                     client_socket.send(file_parts)
+                client_socket.send((str(CONFIRMATION)).encode())
         else:
             client_socket.send((str(ERROR)).encode())
     else:
