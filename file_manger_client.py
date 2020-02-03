@@ -36,6 +36,8 @@ def main():
         elif message.upper() == "SEND FILE":
             print("What is the file path")
             path = input()
+            file_format = path.split(".")[-1]
+            print(file_format)
             message = DICT['SEND_FILE'] + path.encode()
             s.send(message)
             message = s.recv(1024)
@@ -47,11 +49,19 @@ def main():
                 print(message + "M" + '\n' + "This is the file size. Do you still want to download?")
                 answer = input()
                 if answer.upper() == "YES":
+                    print("Ok lets start")
                     s.send(DICT['CONFIRMATION'])
-                    while s.recv(1024) != "":
-                        s.recv(5120)
+                    file_parts = s.recv(1048576)
+                    new_file = open("Server_file" + "." + file_format, "wb")
+                    new_file.write(file_parts)
+                    while file_parts != "":
+                        file_parts = s.recv(1048576)
+                        new_file = open("Server_file" + "." + file_format, "ab")
+                        new_file.write(file_parts)
                         if s.recv(1024) == DICT['CONFIRMATION']:
                             print("The file was succsfuly transfered")
+                            file_parts = ""
+                            new_file.close()
                 elif answer.upper() == "NO":
                     print("Ok. Cancelling...")
                 else:
@@ -70,12 +80,7 @@ def main():
         elif message.upper() == "CHANGE NAME":
             print("What is the path of the file you want to change the name of")
             path = input()
-            for char in path[::-1]:
-                if char != '.':
-                    file_format += char
-                else:
-                    break
-            file_format = file_format[::-1]
+            file_format = path.split(".")[-1]
             print("What is the new file name?")
             new_name = input()
             new_name = new_name + "." + file_format
