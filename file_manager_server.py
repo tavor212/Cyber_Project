@@ -30,12 +30,8 @@ def send_file(client_socket, file_location):
         if user_answer[:1].decode() == str(CONFIRMATION):
             """reads the file 409600 bytes at a time."""
             with open(file_location, 'rb') as f:
-                #for
-                file_parts = f.read(409600)
-                client_socket.send(file_parts)
-                """if the file is bigger than 409600 bytes then the func reads another 409600 bytes and checks if the file is empty"""
-                while os.path.getsize(file_location) != "":
-                    file_parts = f.read(409600)
+                for x in range(int(number_of_loops)):
+                    file_parts = f.read(1024)
                     client_socket.send(file_parts)
                 client_socket.send((str(CONFIRMATION)).encode())
         else:
@@ -101,17 +97,20 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
 
 
 def receive_input(connection, max_buffer_size):
-    client_input = connection.recv(max_buffer_size)
-    client_input_size = sys.getsizeof(client_input)
+    try:
+        client_input = connection.recv(max_buffer_size)
+        client_input_size = sys.getsizeof(client_input)
+        if client_input_size == max_buffer_size:
+            print("The input size is greater than expected, let me divide them")
+            temp = "1"
+            while temp != "":
+                temp = connection.recv(max_buffer_size)
+                client_input += temp
+        decoded_input = client_input.decode("utf8").rstrip()  # decode and strip end of line
+        return decoded_input
+    except Exception:
+        print("ERROR")
 
-    if client_input_size == max_buffer_size:
-        print("The input size is greater than expected, let me divide them")
-        temp = "1"
-        while temp != "":
-            temp = connection.recv(max_buffer_size)
-            client_input += temp
-    decoded_input = client_input.decode("utf8").rstrip()  # decode and strip end of line
-    return decoded_input
 
 
 def main():
@@ -125,24 +124,24 @@ def main():
         s.bind((ALL_IP, PORT))
 
     except:
-        print("ooh something went wrong")
-        sys.exit()
+        print("couldent bind")
 
     s.listen(5)
     print("server started")
     # infinite loop- do not reset for every requests
     while True:
-        connection, address = s.accept()
-        ip, port = str(address[0]), str(address[1])
-        print("Connected with " + ip + " :" + port)
-
         try:
+            connection, address = s.accept()
+            ip, port = str(address[0]), str(address[1])
+            print("Connected with " + ip + " :" + port)
             """sends the threads to a func that checks their requests and redirects them"""
             threading.Thread(target=handel_thread, args=(connection, ip, port)).start()
-        except:
-            print("Thread did not start.")
 
-    s.close()
+
+        except:
+            print("ooh something went wrong")
+            s.close()
+            sys.exit()
 
 
 if __name__ == '__main__':
