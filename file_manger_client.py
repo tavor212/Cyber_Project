@@ -41,6 +41,7 @@ def main():
             message = DICT['SEND_FILE'] + path.encode()
             s.send(message)
             message = s.recv(1024)
+            print(message[:1])
             if message[:1] == DICT['CONFIRMATION']:
                 message = message[1:].decode()
                 message = int(message)
@@ -51,17 +52,20 @@ def main():
                 if answer.upper() == "YES":
                     print("Ok lets start")
                     s.send(DICT['CONFIRMATION'])
-                    file_parts = s.recv(1048576)
+                    file_parts = s.recv(409600)
+                    print(file_parts)
                     new_file = open("Server_file" + "." + file_format, "wb")
                     new_file.write(file_parts)
                     while file_parts != "":
-                        file_parts = s.recv(1048576)
-                        new_file = open("Server_file" + "." + file_format, "ab")
-                        new_file.write(file_parts)
+                        file_parts = s.recv(409600)
+                        print(file_parts)
                         if s.recv(1024) == DICT['CONFIRMATION']:
                             print("The file was succsfuly transfered")
                             file_parts = ""
                             new_file.close()
+                        else:
+                            new_file = open("Server_file" + "." + file_format, "ab")
+                            new_file.write(file_parts)
                 elif answer.upper() == "NO":
                     print("Ok. Cancelling...")
                 else:
