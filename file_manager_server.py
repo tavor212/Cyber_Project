@@ -18,20 +18,24 @@ CONFIRMATION = 1
 
 def send_file(client_socket, file_location):
     if os.path.exists(file_location):
+        print("path exists")
         client_socket.send((str(CONFIRMATION)).encode() + (str(os.path.getsize(file_location))).encode())
+        file_size = os.path.getsize(file_location)
+        number_of_loops = file_size/1024
+        print(number_of_loops)
         user_answer = client_socket.recv(1024)
         print("recived:" + str(user_answer))
         print(file_location)
         print(user_answer[:1].decode())
         if user_answer[:1].decode() == str(CONFIRMATION):
-            """reads the file 5120 bytes at a time."""
-            print("hello")
+            """reads the file 409600 bytes at a time."""
             with open(file_location, 'rb') as f:
-                file_parts = f.read(1048576)
+                #for
+                file_parts = f.read(409600)
                 client_socket.send(file_parts)
-                """if the file is bigger than 5120 bytes then the func reads another 5120 bytes and checks if the file is empty"""
+                """if the file is bigger than 409600 bytes then the func reads another 409600 bytes and checks if the file is empty"""
                 while os.path.getsize(file_location) != "":
-                    file_parts = f.read(1048576)
+                    file_parts = f.read(409600)
                     client_socket.send(file_parts)
                 client_socket.send((str(CONFIRMATION)).encode())
         else:
