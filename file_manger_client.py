@@ -52,13 +52,11 @@ def main():
                 if answer.upper() == "YES":
                     print("Ok lets start")
                     s.send(DICT['CONFIRMATION'])
-                    file_parts = s.recv(409600)
-                    print(file_parts)
+                    file_parts = s.recv(1024)
                     new_file = open("Server_file" + "." + file_format, "wb")
                     new_file.write(file_parts)
                     while file_parts != "":
-                        file_parts = s.recv(409600)
-                        print(file_parts)
+                        file_parts = s.recv(1024)
                         if s.recv(1024) == DICT['CONFIRMATION']:
                             print("The file was succsfuly transfered")
                             file_parts = ""
