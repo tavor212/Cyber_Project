@@ -26,6 +26,7 @@ def main():
         print("'Delete' - will delete the file in the path you will give")
         print("'EXIT' - will exit the program :(")
         message = input()
+
         if message.upper() == "EXIT":
             active = False
             s.send(DICT['EXIT'])
@@ -33,6 +34,7 @@ def main():
             if message == DICT['EXIT']:
                 print("Ok bye :(")
                 sys.exit()
+
         elif message.upper() == "SEND FILE":
             print("What is the file path")
             path = input()
@@ -43,21 +45,28 @@ def main():
             message = s.recv(1024)
             print(message[:1])
             if message[:1] == DICT['CONFIRMATION']:
-                message = message[1:].decode()
-                message = int(message)
-                message = message/1000
-                message = str(message)
-                print(message + "M" + '\n' + "This is the file size. Do you still want to download?")
+                size = message[1:].decode()
+                size = int(size)
+                size = size/1000
+                size = str(size)
+                print(size + "M" + '\n' + "This is the file size. Do you still want to download?")
                 answer = input()
                 if answer.upper() == "YES":
                     print("Ok lets start")
                     s.send(DICT['CONFIRMATION'])
                     file_parts = s.recv(1024)
                     new_file = open("Server_file" + "." + file_format, "wb")
-                    new_file.write(file_parts)
+                    if file_parts == DICT['CONFIRMATION']:
+                        print("The file was succsfuly transfered")
+                        file_parts = ""
+                        new_file.close()
+                    try:
+                        new_file.write(file_parts)
+                    except:
+                        file_parts = ""
                     while file_parts != "":
                         file_parts = s.recv(1024)
-                        if s.recv(1024) == DICT['CONFIRMATION']:
+                        if file_parts == DICT['CONFIRMATION']:
                             print("The file was succsfuly transfered")
                             file_parts = ""
                             new_file.close()
@@ -70,6 +79,7 @@ def main():
                     print("Sorry, this is not a valid request")
             else:
                 print("Oh oh something went wrong.\n")
+
         elif message.upper() == "DELETE":
             print("What is the file path?")
             message = DICT['DELETE']+input().encode()
@@ -79,6 +89,7 @@ def main():
                 print("The file was deleted!!\n")
             if message == DICT['ERROR']:
                 print("Oh oh. Something went wrong. The file was not deleted")
+
         elif message.upper() == "CHANGE NAME":
             print("What is the path of the file you want to change the name of")
             path = input()
@@ -93,6 +104,7 @@ def main():
                 print("The name was succsfuly changed\n")
             if message == DICT['ERROR']:
                 print("Oh oh something went wrong. The file was not changed\n")
+
         else:
             print("there is a problem with your input, please try again\n")
 
