@@ -11,7 +11,7 @@ def download_file(s):
     path = input()
     file_format = path.split(".")[-1]
     print(file_format)
-    message = DICT['SEND_FILE'] + path.encode()
+    message = DICT['DOWNLOAD_FILE'] + path.encode()
     s.send(message)
     message = s.recv(1024)
     print(message[:1])
@@ -51,8 +51,17 @@ def download_file(s):
     else:
         print("Oh oh something went wrong.\n")
 
+
 def send_file(s):
-    pass
+    print("What is the path of the file you want to send?")
+    path = input()
+    file_format = path.split(".")[-1]
+    print(file_format)
+    message = DICT['SEND_FILE'] + path.encode()
+    s.send(message)
+    message = s.recv(1024)
+    if message == DICT['CONFIRMATION']:
+        pass
 
 
 def change_name(s):
@@ -119,7 +128,7 @@ def main():
 
         if message.upper() == "EXIT":
             exit(s)
-        elif message.upper() == "DOWNLOAD_FILE":
+        elif message.upper() == "DOWNLOAD FILE":
             download_file(s)
         elif message.upper() == "SENT FILE":
             send_file(s)
