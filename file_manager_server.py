@@ -83,7 +83,7 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             message = "Connection " + ip + ": " + port + " closed"
             print(message)
             active = False
-        elif client_input[:2] == str(SEND_FILE):
+        elif client_input[:2] == str(DOWNLOAD_FILE):
             file_location = client_input[2:]
             send_file(connection, file_location)
         elif client_input[:2] == str(DELETE):
@@ -118,7 +118,6 @@ def receive_input(connection, max_buffer_size):
         return decoded_input
     except Exception:
         print("ERROR")
-
 
 
 def main():
