@@ -3,10 +3,10 @@ import sys
 
 PORT = 6543
 HOST = '127.0.0.1'  # switch to the IP of the server PC if not local
-DICT = {'ERROR': "300".encode(), 'RESPONSE': "200".encode(), 'REQUEST': "100".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
+DICT = {'ERROR': "300".encode(), 'RESPONSE': "200".encode(), 'REQUEST': "100".encode(), 'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
 
 
-def send_file(s):
+def download_file(s):
     print("What is the file path")
     path = input()
     file_format = path.split(".")[-1]
@@ -51,6 +51,9 @@ def send_file(s):
     else:
         print("Oh oh something went wrong.\n")
 
+def send_file(s):
+    pass
+
 
 def change_name(s):
     print("What is the path of the file you want to change the name of")
@@ -88,6 +91,14 @@ def exit(s):
         sys.exit()
 
 
+def print_menu():
+    print("'Download File' - a function that with a given path will download a file from the server to your computer")
+    print("'Send File' - a function that with a given path will send a file from your computer to the server")
+    print("'Change Name' - a function that with a given path the a file, will change its name with a name you give")
+    print("'Delete' - will delete the file in the path you will give")
+    print("'EXIT' - will exit the program :(")
+
+
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -103,15 +114,14 @@ def main():
     active = True
     file_format = ""
     while active:
-        print("'Send File' - a function that with a given path will send you a file from the server to your computer")
-        print("'Change Name' - a function that with a given path the a file, will change its name with a name you give")
-        print("'Delete' - will delete the file in the path you will give")
-        print("'EXIT' - will exit the program :(")
+        print_menu()
         message = input()
 
         if message.upper() == "EXIT":
             exit(s)
-        elif message.upper() == "SEND FILE":
+        elif message.upper() == "DOWNLOAD_FILE":
+            download_file(s)
+        elif message.upper() == "SENT FILE":
             send_file(s)
         elif message.upper() == "DELETE":
             delete(s)
