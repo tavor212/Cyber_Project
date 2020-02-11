@@ -9,6 +9,7 @@ ALL_IP = '0.0.0.0'
 ERROR = 300
 RESPONSE = 200
 REQUEST = 100   # server asks the client for data
+DOWNLOAD_FILE = 50
 SEND_FILE = 40
 CHANGE_NAME = 30
 DELETE = 20
@@ -22,6 +23,9 @@ def send_file(client_socket, file_location):
         client_socket.send((str(CONFIRMATION)).encode() + (str(os.path.getsize(file_location))).encode())
         file_size = os.path.getsize(file_location)
         number_of_loops = file_size/1024
+        number_of_loops = int(number_of_loops)
+        if number_of_loops < 1:
+            number_of_loops += 1
         print(number_of_loops)
         user_answer = client_socket.recv(1024)
         print("recived:" + str(user_answer))
@@ -38,6 +42,10 @@ def send_file(client_socket, file_location):
             client_socket.send((str(ERROR)).encode())
     else:
         client_socket.send((str(ERROR)).encode())
+
+
+def download_file():
+    pass
 
 
 def change_file_name(client_socket, file_location, new_file_name):
