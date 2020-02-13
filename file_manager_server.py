@@ -32,7 +32,7 @@ def send_file(client_socket, file_location):
         print(file_location)
         print(user_answer[:1].decode())
         if user_answer[:1].decode() == str(CONFIRMATION):
-            """reads the file 409600 bytes at a time."""
+            """reads the file 1024 bytes at a time."""
             with open(file_location, 'rb') as f:
                 for x in range(int(number_of_loops)):
                     file_parts = f.read(1024)
@@ -44,8 +44,12 @@ def send_file(client_socket, file_location):
         client_socket.send((str(ERROR)).encode())
 
 
-def download_file():
-    pass
+def download_file(client_socket, file_location):
+    print(file_location)
+    client_socket.send((str(CONFIRMATION)).encode())
+    file_format = client_socket.rec(1024)
+    number_of_loops = client_socket.rec(1024)
+    new_file = open("Server_file" + "." + file_format, "wb")
 
 
 def change_file_name(client_socket, file_location, new_file_name):
@@ -83,9 +87,12 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             message = "Connection " + ip + ": " + port + " closed"
             print(message)
             active = False
-        elif client_input[:2] == str(DOWNLOAD_FILE):
+        elif client_input[:2] == str(SEND_FILE):
             file_location = client_input[2:]
             send_file(connection, file_location)
+        elif client_input[:2] == str(DOWNLOAD_FILE):
+            file_location = client_input[2:]
+            download_file(connection, file_location)
         elif client_input[:2] == str(DELETE):
             file_location = client_input[2:]
             print(file_location)
