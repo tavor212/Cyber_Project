@@ -55,13 +55,29 @@ def download_file(s):
 def send_file(s):
     print("What is the path of the file you want to send?")
     path = input()
-    file_format = path.split(".")[-1]
-    print(file_format)
-    message = DICT['SEND_FILE'] + path.encode()
-    s.send(message)
-    message = s.recv(1024)
-    if message == DICT['CONFIRMATION']:
-        pass
+    if os.path.exists(path):
+        file_format = path.split(".")[-1]
+        s.send(file_format)
+        print(file_format)
+        message = DICT['SEND_FILE'] + path.encode()
+        s.send(message)
+        message = s.recv(1024)
+        if message == DICT['CONFIRMATION']:
+            print("ok lets start")
+            file_size = os.path.getsize(path)
+            number_of_loops = file_size / 1024
+            number_of_loops = int(number_of_loops)
+            if number_of_loops < 1:
+                number_of_loops += 1
+            print(number_of_loops)
+            s.send(number_of_loops)
+            with open(file_location, 'rb') as f:
+                for x in range(int(number_of_loops)):
+                    file_parts = f.read(1024)
+                    client_socket.send(file_parts)
+                client_socket.send((str(CONFIRMATION)).encode())
+    else:
+        print("Im sorry there is a problem with your path")
 
 
 def change_name(s):
