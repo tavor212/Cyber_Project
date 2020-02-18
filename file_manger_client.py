@@ -1,9 +1,10 @@
 import socket
 import sys
+import os
 
 PORT = 6543
 HOST = '127.0.0.1'  # switch to the IP of the server PC if not local
-DICT = {'ERROR': "300".encode(), 'RESPONSE': "200".encode(), 'REQUEST': "100".encode(), 'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
+DICT = {'ERROR': "300".encode(), 'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
 
 
 def download_file(s):
@@ -55,29 +56,25 @@ def download_file(s):
 def send_file(s):
     print("What is the path of the file you want to send?")
     path = input()
-    if os.path.exists(path):
-        file_format = path.split(".")[-1]
-        s.send(file_format)
-        print(file_format)
-        message = DICT['SEND_FILE'] + path.encode()
-        s.send(message)
-        message = s.recv(1024)
-        if message == DICT['CONFIRMATION']:
-            print("ok lets start")
-            file_size = os.path.getsize(path)
-            number_of_loops = file_size / 1024
-            number_of_loops = int(number_of_loops)
-            if number_of_loops < 1:
-                number_of_loops += 1
-            print(number_of_loops)
-            s.send(number_of_loops)
-            with open(file_location, 'rb') as f:
-                for x in range(int(number_of_loops)):
-                    file_parts = f.read(1024)
-                    client_socket.send(file_parts)
-                client_socket.send((str(CONFIRMATION)).encode())
-    else:
-        print("Im sorry there is a problem with your path")
+    message = DICT['SEND_FILE'] + path.encode()
+    s.send(message)
+    file_size = os.path.getsize(path)
+    number_of_loops = file_size / 1024
+    number_of_loops = int(number_of_loops)
+    if number_of_loops < 1:
+        number_of_loops += 1
+    print(number_of_loops)
+    s.send((str(number_of_loops)).encode())
+    print("What is the name of your created file?")
+    new_file_name = input()
+    s.send((str(new_file_name)).encode())
+    with open(path, 'rb') as f:
+        for x in range(number_of_loops):
+            file_parts = f.read(1024)
+            s.send(file_parts)
+        s.send(DICT['CONFIRMATION'])
+        if s.recv(1024) == DICT['CONFIRMATION']:
+            print("the file is stored in the server")
 
 
 def change_name(s):
@@ -146,7 +143,7 @@ def main():
             exit(s)
         elif message.upper() == "DOWNLOAD FILE":
             download_file(s)
-        elif message.upper() == "SENT FILE":
+        elif message.upper() == "SEND FILE":
             send_file(s)
         elif message.upper() == "DELETE":
             delete(s)
