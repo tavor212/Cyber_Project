@@ -7,10 +7,8 @@ PORT = 6543
 HOST = '127.0.0.1'
 ALL_IP = '0.0.0.0'
 ERROR = 300
-RESPONSE = 200
-REQUEST = 100   # server asks the client for data
 DOWNLOAD_FILE = 50
-SEND_FILE = 40
+STORE_FILE = 40
 CHANGE_NAME = 30
 DELETE = 20
 EXIT = 10
@@ -44,12 +42,24 @@ def send_file(client_socket, file_location):
         client_socket.send((str(ERROR)).encode())
 
 
-def download_file(client_socket, file_location):
+def store_file(client_socket, file_location):
     print(file_location)
-    client_socket.send((str(CONFIRMATION)).encode())
-    file_format = client_socket.rec(1024)
-    number_of_loops = client_socket.rec(1024)
-    new_file = open("Server_file" + "." + file_format, "wb")
+    file_format = file_location.split(".")[-1]
+    number_of_loops = (client_socket.recv(1024)).decode()
+    print(number_of_loops)
+    new_file_name = (client_socket.recv(1024)).decode()
+    print(new_file_name)
+    new_file = open(new_file_name + "." + file_format, "wb")
+    try:
+        for x in range(number_of_loops):
+            new_file.write(client_socket.recv(1024))
+        new_file.close()
+        if client_socket.recv(1024) == str(CONFIRMATION):
+            print("the file was succsfuly transfered")
+            client_socket.send((str(CONFIRMATION)).encode())
+    except Exception:
+        print("something went wrong")
+        client_socket.send((str(ERROR)).encode())
 
 
 def change_file_name(client_socket, file_location, new_file_name):
@@ -87,12 +97,12 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
             message = "Connection " + ip + ": " + port + " closed"
             print(message)
             active = False
-        elif client_input[:2] == str(SEND_FILE):
-            file_location = client_input[2:]
-            send_file(connection, file_location)
         elif client_input[:2] == str(DOWNLOAD_FILE):
             file_location = client_input[2:]
-            download_file(connection, file_location)
+            send_file(connection, file_location)
+        elif client_input[:2] == str(STORE_FILE):
+            file_location = client_input[2:]
+            store_file(connection, file_location)
         elif client_input[:2] == str(DELETE):
             file_location = client_input[2:]
             print(file_location)
