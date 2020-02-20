@@ -28,10 +28,6 @@ def download_file(s):
             s.send(DICT['CONFIRMATION'])
             file_parts = s.recv(1024)
             new_file = open("Server_file" + "." + file_format, "wb")
-            if file_parts == DICT['CONFIRMATION']:
-                print("The file was succsfuly transfered")
-                file_parts = ""
-                new_file.close()
             try:
                 new_file.write(file_parts)
             except:
@@ -43,7 +39,6 @@ def download_file(s):
                     file_parts = ""
                     new_file.close()
                 else:
-                    new_file = open("Server_file" + "." + file_format, "ab")
                     new_file.write(file_parts)
         elif answer.upper() == "NO":
             print("Ok. Cancelling...")
@@ -84,7 +79,7 @@ def change_name(s):
     print("What is the new file name?")
     new_name = input()
     new_name = new_name + "." + file_format
-    message = DICT['CHANGE_NAME'] + path.encode() + ' '.encode() + new_name.encode()
+    message = DICT['CHANGE_NAME'] + path.encode() + '*'.encode() + new_name.encode()
     s.send(message)
     message = s.recv(1024)
     if message == DICT['CONFIRMATION']:
