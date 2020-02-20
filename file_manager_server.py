@@ -45,7 +45,7 @@ def send_file(client_socket, file_location):
 def store_file(client_socket, file_location):
     print(file_location)
     file_format = file_location.split(".")[-1]
-    number_of_loops = (client_socket.recv(1024)).decode()
+    number_of_loops = int((client_socket.recv(1024)).decode())
     print(number_of_loops)
     new_file_name = (client_socket.recv(1024)).decode()
     print(new_file_name)
@@ -54,15 +54,18 @@ def store_file(client_socket, file_location):
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
         new_file.close()
-        if client_socket.recv(1024) == str(CONFIRMATION):
+        print("here")
+        if client_socket.recv(1024).decode() == str(CONFIRMATION):
             print("the file was succsfuly transfered")
             client_socket.send((str(CONFIRMATION)).encode())
-    except Exception:
+    except Exception as e:
         print("something went wrong")
+        print(e)
         client_socket.send((str(ERROR)).encode())
 
 
 def change_file_name(client_socket, file_location, new_file_name):
+    print(file_location)
     if os.path.exists(file_location):
         """gets the dir of the file with dirname"""
         dir_path = os.path.dirname(file_location)
@@ -110,7 +113,8 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
         elif client_input[:2] == str(CHANGE_NAME):
             """splits the client info using the ' ' in between the file path and the new name"""
             client_input = client_input[2:]
-            client_input = client_input.split(" ")
+            print(client_input.split("*"))
+            client_input = client_input.split("*")
             file_location = client_input[0]
             new_file_name = client_input[1]
             change_file_name(connection, file_location, new_file_name)
@@ -132,6 +136,7 @@ def receive_input(connection, max_buffer_size):
                 temp = connection.recv(max_buffer_size)
                 client_input += temp
         decoded_input = client_input.decode("utf8").rstrip()  # decode and strip end of line
+        print(decoded_input)
         return decoded_input
     except Exception:
         print("ERROR")
