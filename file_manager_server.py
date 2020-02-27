@@ -45,22 +45,22 @@ def send_file(client_socket, file_location):
 def store_file(client_socket, file_location):
     print(file_location)
     file_format = file_location.split(".")[-1]
+    """gets the number of times he needs to recv from the client"""
     number_of_loops = int((client_socket.recv(1024)).decode())
     print(number_of_loops)
     new_file_name = (client_socket.recv(1024)).decode()
     print(new_file_name)
     new_file = open(new_file_name + "." + file_format, "wb")
     try:
+        """recv the file parts x times"""
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
         new_file.close()
-        print("here")
         if client_socket.recv(1024).decode() == str(CONFIRMATION):
             print("the file was succsfuly transfered")
             client_socket.send((str(CONFIRMATION)).encode())
-    except Exception as e:
+    except Exception:
         print("something went wrong")
-        print(e)
         client_socket.send((str(ERROR)).encode())
 
 
