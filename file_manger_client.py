@@ -17,11 +17,13 @@ def download_file(s):
     message = s.recv(1024)
     print(message[:1])
     if message[:1] == DICT['CONFIRMATION']:
+        """calculates the file size in megabytes"""
         size = message[1:].decode()
         size = int(size)
         size = size / 1000
         size = str(size)
         print(size + "M" + '\n' + "This is the file size. Do you still want to download?")
+
         answer = input()
         if answer.upper() == "YES":
             print("Ok lets start")
@@ -54,15 +56,20 @@ def send_file(s):
     message = DICT['SEND_FILE'] + path.encode()
     s.send(message)
     file_size = os.path.getsize(path)
+
+    """calculates the number of times the server will need to recv 1024 bytes"""
     number_of_loops = file_size / 1024
     number_of_loops = int(number_of_loops)
     if number_of_loops < 1:
         number_of_loops += 1
     print(number_of_loops)
+
     s.send((str(number_of_loops)).encode())
     print("What is the name of your created file?")
     new_file_name = input()
     s.send((str(new_file_name)).encode())
+
+    """reads the file 1024 bytes at a time and sends to the server"""
     with open(path, 'rb') as f:
         for x in range(number_of_loops):
             file_parts = f.read(1024)
@@ -79,6 +86,7 @@ def change_name(s):
     print("What is the new file name?")
     new_name = input()
     new_name = new_name + "." + file_format
+    """adds a * in between the variables so i can seperate them later in the server"""
     message = DICT['CHANGE_NAME'] + path.encode() + '*'.encode() + new_name.encode()
     s.send(message)
     message = s.recv(1024)
@@ -125,15 +133,13 @@ def main():
         sys.exit()
 
     print("Hello \nWelcome to my amazing file management program. you wont find any other in the market :)")
-    print("At your disposal are 3 main tools.")
+    print("At your disposal are 4 main tools.")
     print("What would you like me to do?\n")
 
     active = True
-    file_format = ""
     while active:
         print_menu()
         message = input()
-
         if message.upper() == "EXIT":
             exit(s)
         elif message.upper() == "DOWNLOAD FILE":
