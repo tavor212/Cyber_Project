@@ -2,6 +2,7 @@ import socket
 import threading
 import os
 import sys
+import login
 
 PORT = 6543
 HOST = '127.0.0.1'
@@ -23,7 +24,7 @@ def send_file(client_socket, file_location):
         number_of_loops = file_size/1024
         number_of_loops = int(number_of_loops)
         if number_of_loops < 1:
-            number_of_loops += 1
+            number_of_loops = 1
         print(number_of_loops)
         user_answer = client_socket.recv(1024)
         print("recived:" + str(user_answer))
@@ -93,34 +94,39 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
         print(client_input)
         print(type(client_input))
         print(connection)
-        if client_input == str(EXIT):
-            print("Client is requesting to quit")
-            connection.send((str(EXIT)).encode())
-            connection.close()
-            message = "Connection " + ip + ": " + port + " closed"
-            print(message)
-            active = False
-        elif client_input[:2] == str(DOWNLOAD_FILE):
-            file_location = client_input[2:]
-            send_file(connection, file_location)
-        elif client_input[:2] == str(STORE_FILE):
-            file_location = client_input[2:]
-            store_file(connection, file_location)
-        elif client_input[:2] == str(DELETE):
-            file_location = client_input[2:]
-            print(file_location)
-            delete_file(connection, file_location)
-        elif client_input[:2] == str(CHANGE_NAME):
-            """splits the client info using the ' ' in between the file path and the new name"""
-            client_input = client_input[2:]
-            print(client_input.split("*"))
-            client_input = client_input.split("*")
-            file_location = client_input[0]
-            new_file_name = client_input[1]
-            change_file_name(connection, file_location, new_file_name)
-        else:
-            connection.send("oh oh something went wrong".encode())
-            print("there is a problem with the input")
+        try:
+            if client_input == str(EXIT):
+                print("Client is requesting to quit")
+                connection.send((str(EXIT)).encode())
+                connection.close()
+                message = "Connection " + ip + ": " + port + " closed"
+                print(message)
+                active = False
+            elif client_input[:2] == str(DOWNLOAD_FILE):
+                file_location = client_input[2:]
+                send_file(connection, file_location)
+            elif client_input[:2] == str(STORE_FILE):
+                file_location = client_input[2:]
+                store_file(connection, file_location)
+            elif client_input[:2] == str(DELETE):
+                file_location = client_input[2:]
+                print(file_location)
+                delete_file(connection, file_location)
+            elif client_input[:2] == str(CHANGE_NAME):
+                """splits the client info using the ' ' in between the file path and the new name"""
+                client_input = client_input[2:]
+                print(client_input.split("*"))
+                client_input = client_input.split("*")
+                file_location = client_input[0]
+                new_file_name = client_input[1]
+                change_file_name(connection, file_location, new_file_name)
+            else:
+                connection.send("oh oh something went wrong".encode())
+                print("there is a problem with the input")
+                connection.close()
+                active = False
+        except:
+            print("client ended the connection unexpectedly")
             connection.close()
             active = False
 
@@ -132,6 +138,7 @@ def receive_input(connection, max_buffer_size):
         if client_input_size == max_buffer_size:
             print("The input size is greater than expected, let me divide them")
             temp = "1"
+            print("asd")
             while temp != "":
                 temp = connection.recv(max_buffer_size)
                 client_input += temp
