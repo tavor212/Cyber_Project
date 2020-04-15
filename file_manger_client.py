@@ -1,6 +1,9 @@
 import socket
 import sys
 import os
+from tkinter import *
+# import graphics
+
 
 PORT = 6543
 HOST = '127.0.0.1'  # switch to the IP of the server PC if not local
@@ -63,7 +66,6 @@ def send_file(s):
     if number_of_loops < 1:
         number_of_loops += 1
     print(number_of_loops)
-
     s.send((str(number_of_loops)).encode())
     print("What is the name of your created file?")
     new_file_name = input()
