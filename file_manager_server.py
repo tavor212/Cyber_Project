@@ -2,46 +2,136 @@ import socket
 import threading
 import os
 import sys
-import login
+import sqlite3
+import hashlib
 
-PORT = 6543
+
+PORT = 1000
 HOST = '127.0.0.1'
 ALL_IP = '0.0.0.0'
 ERROR = 300
+REGISTER = 70
+LOGIN = 60
 DOWNLOAD_FILE = 50
 STORE_FILE = 40
 CHANGE_NAME = 30
 DELETE = 20
 EXIT = 10
 CONFIRMATION = 1
+USERNAME = ""
+PROJECT_PATH = os.path.abspath(__file__)
+USER_DIRECTORY = ""
+
+
+def register(s, conn, cursor, username, password):
+    global USERNAME
+    cursor.execute("SELECT ID FROM users_info")
+    all_ids = cursor.fetchall()
+    #checks if the db is empty
+    if not all_ids:
+        load_db(conn, cursor, [1,username,password])
+        s.send((str(CONFIRMATION)).encode())
+        USERNAME = username
+        create_user_folder()
+    else:
+        try:
+            print(all_ids)
+            print(len(all_ids))
+            try:
+                last_ID = all_ids[len(all_ids)-1]
+            except:
+                last_ID = 0
+            cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
+            existing_name = cursor.fetchone()
+            print(existing_name)
+            if existing_name is None:
+                #because last_ID is a tuple we need an extra [0] to get the correct value
+                load_db(conn, cursor, [last_ID[0] + 1, username, password])
+                s.send((str(CONFIRMATION)).encode())
+                USERNAME = username
+                create_user_folder()
+            else:
+                print("sorry the username is already used")
+                s.send((str(ERROR)).encode())
+        except:
+            print("something went wrong")
+
+
+def login(s, cursor, username, password):
+    global USERNAME, USER_DIRECTORY
+    cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
+    existing_name = cursor.fetchone()
+    print(existing_name)
+    cursor.execute("SELECT password FROM users_info WHERE user_name == ? AND password == ?", (username,) + (password.__hash__(),))
+    existing_password = cursor.fetchone()
+    print(existing_password)
+    if existing_name is None and existing_password is None:
+        print("no user found")
+        s.send((str(ERROR)).encode())
+    elif existing_name is None or existing_password is None:
+        print("Sorry your username or password is wrong")
+        s.send((str(ERROR)).encode())
+    else:
+        s.send((str(CONFIRMATION)).encode())
+        USERNAME = username
+        list = PROJECT_PATH.split('\\')
+        list[-1] = USERNAME
+        new_path = "\\".join(list)
+        USER_DIRECTORY = new_path
+
+
+def load_db(conn, cursor, data_list):
+    # Fills the table
+    print("in load")
+    hashed_password = data_list[2].__hash__()
+    cursor.execute("INSERT INTO users_info VALUES (?,?,?)", (data_list[0], data_list[1], hashed_password))
+    conn.commit()
+
+
+def create_user_folder():
+    print(PROJECT_PATH)
+    list = PROJECT_PATH.split('\\')
+    print(list)
+    list[-1] = USERNAME
+    print(list)
+    new_path = "\\".join(list)
+    print(new_path)
+    os.mkdir(os.path.abspath(new_path))
+    global USER_DIRECTORY
+    USER_DIRECTORY = new_path
 
 
 def send_file(client_socket, file_location):
-    if os.path.exists(file_location):
-        print("path exists")
-        client_socket.send((str(CONFIRMATION)).encode() + (str(os.path.getsize(file_location))).encode())
-        file_size = os.path.getsize(file_location)
-        number_of_loops = file_size/1024
-        number_of_loops = int(number_of_loops)
-        if number_of_loops < 1:
-            number_of_loops = 1
-        print(number_of_loops)
-        user_answer = client_socket.recv(1024)
-        print("recived:" + str(user_answer))
-        print(file_location)
-        print(user_answer[:1].decode())
-        if user_answer[:1].decode() == str(CONFIRMATION):
-            """reads the file 1024 bytes at a time."""
-            with open(file_location, 'rb') as f:
-                for x in range(int(number_of_loops)):
-                    file_parts = f.read(1024)
-                    client_socket.send(file_parts)
-                client_socket.send((str(CONFIRMATION)).encode())
+    print(os.path.dirname(os.path.realpath(file_location)))
+    print(USER_DIRECTORY)
+    if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
+        if os.path.exists(file_location):
+            print("path exists")
+            client_socket.send((str(CONFIRMATION)).encode() + (str(os.path.getsize(file_location))).encode())
+            file_size = os.path.getsize(file_location)
+            number_of_loops = file_size/1024
+            number_of_loops = int(number_of_loops)
+            if number_of_loops < 1:
+                number_of_loops = 1
+            print(number_of_loops)
+            user_answer = client_socket.recv(1024)
+            print("recived:" + str(user_answer))
+            print(file_location)
+            print(user_answer[:1].decode())
+            if user_answer[:1].decode() == str(CONFIRMATION):
+                """reads the file 1024 bytes at a time."""
+                with open(file_location, 'rb') as f:
+                    for x in range(int(number_of_loops)):
+                        file_parts = f.read(1024)
+                        client_socket.send(file_parts)
+                    client_socket.send((str(CONFIRMATION)).encode())
+            else:
+                client_socket.send((str(ERROR)).encode())
         else:
             client_socket.send((str(ERROR)).encode())
     else:
+        print("not in user directory")
         client_socket.send((str(ERROR)).encode())
-
 
 def store_file(client_socket, file_location):
     print(file_location)
@@ -51,11 +141,13 @@ def store_file(client_socket, file_location):
     print(number_of_loops)
     new_file_name = (client_socket.recv(1024)).decode()
     print(new_file_name)
-    new_file = open(new_file_name + "." + file_format, "wb")
+    completeName = os.path.join(USER_DIRECTORY, new_file_name + "." + file_format)
+    new_file = open(completeName, "wb")
     try:
         """recv the file parts x times"""
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
+        # last_digit = new_file
         new_file.close()
         if client_socket.recv(1024).decode() == str(CONFIRMATION):
             print("the file was succsfuly transfered")
@@ -67,27 +159,33 @@ def store_file(client_socket, file_location):
 
 def change_file_name(client_socket, file_location, new_file_name):
     print(file_location)
-    if os.path.exists(file_location):
-        """gets the dir of the file with dirname"""
-        dir_path = os.path.dirname(file_location)
-        """creates a new path with the directory, back slash and the new file name"""
-        new_path = dir_path + "\\" + new_file_name
-        """the func rename basiclly copies the original just with a diffrent name"""
-        os.rename(file_location, new_path)
-        client_socket.send((str(CONFIRMATION)).encode())
+    if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
+        if os.path.exists(file_location):
+            """gets the dir of the file with dirname"""
+            dir_path = os.path.dirname(file_location)
+            """creates a new path with the directory, back slash and the new file name"""
+            new_path = dir_path + "\\" + new_file_name
+            """the func rename basiclly copies the original just with a diffrent name"""
+            os.rename(file_location, new_path)
+            client_socket.send((str(CONFIRMATION)).encode())
+        else:
+            client_socket.send((str(ERROR)).encode())
     else:
         client_socket.send((str(ERROR)).encode())
 
 
 def delete_file(client_socket, file_location):
-    if os.path.exists(file_location):
-        os.remove(file_location)
-        client_socket.send(str(CONFIRMATION).encode())
+    if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
+        if os.path.exists(file_location):
+            os.remove(file_location)
+            client_socket.send(str(CONFIRMATION).encode())
+        else:
+            client_socket.send(str(ERROR).encode())
     else:
         client_socket.send(str(ERROR).encode())
 
 
-def handel_thread(connection, ip, port, max_buffer_size=5120):
+def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
     active = True
     while active:
         client_input = receive_input(connection, max_buffer_size)
@@ -102,6 +200,16 @@ def handel_thread(connection, ip, port, max_buffer_size=5120):
                 message = "Connection " + ip + ": " + port + " closed"
                 print(message)
                 active = False
+            elif client_input[:2] == str(REGISTER):
+                client_input = client_input[2:]
+                data = client_input.split(',')
+                print(data[0])
+                print(data[1])
+                register(connection, conn, cursor, data[0], data[1])
+            elif client_input[:2] == str(LOGIN):
+                client_input = client_input[2:]
+                data = client_input.split(',')
+                login(connection, cursor, data[0], data[1])
             elif client_input[:2] == str(DOWNLOAD_FILE):
                 file_location = client_input[2:]
                 send_file(connection, file_location)
@@ -135,18 +243,21 @@ def receive_input(connection, max_buffer_size):
     try:
         client_input = connection.recv(max_buffer_size)
         client_input_size = sys.getsizeof(client_input)
-        if client_input_size == max_buffer_size:
+        if client_input_size > max_buffer_size:
             print("The input size is greater than expected, let me divide them")
             temp = "1"
-            print("asd")
             while temp != "":
                 temp = connection.recv(max_buffer_size)
                 client_input += temp
         decoded_input = client_input.decode("utf8").rstrip()  # decode and strip end of line
-        print(decoded_input)
         return decoded_input
     except Exception:
         print("ERROR")
+
+
+def check_files():
+    arr = os.listdir(USER_DIRECTORY)
+    print(arr)
 
 
 def main():
@@ -164,6 +275,19 @@ def main():
 
     s.listen(5)
     print("server started")
+
+    #starting db
+    conn = sqlite3.connect("users_info.db", check_same_thread=False)
+
+    cursor = conn.cursor()
+    # creates a table
+    tb_create = """CREATE TABLE users_info(ID INT, user_name TEXT, password TEXT)"""
+
+    tb_exists = "SELECT name FROM sqlite_master WHERE type='table' AND name='users_info'"
+    if not conn.execute(tb_exists).fetchone():
+        conn.execute(tb_create)
+    conn.commit()
+
     # infinite loop- do not reset for every requests
     while True:
         try:
@@ -171,7 +295,7 @@ def main():
             ip, port = str(address[0]), str(address[1])
             print("Connected with " + ip + " :" + port)
             """sends the threads to a func that checks their requests and redirects them"""
-            threading.Thread(target=handel_thread, args=(connection, ip, port)).start()
+            threading.Thread(target=handel_thread, args=(connection, ip, port, conn, cursor)).start()
 
 
         except:
