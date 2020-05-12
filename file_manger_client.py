@@ -2,12 +2,15 @@ import socket
 import sys
 import os
 from tkinter import *
-# import graphics
+import time
+from tkinter import *
+import tkinter as tk
+from functools import partial
 
-
-PORT = 6543
+PORT = 1000
 HOST = '127.0.0.1'  # switch to the IP of the server PC if not local
-DICT = {'ERROR': "300".encode(), 'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
+DICT = {'ERROR': "300".encode(), 'REGISTER': "70".encode(), 'LOGIN': "60".encode(),'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
+
 
 
 def download_file(s):
@@ -50,7 +53,7 @@ def download_file(s):
         else:
             print("Sorry, this is not a valid request")
     else:
-        print("Oh oh something went wrong.\n")
+        print("not in user directory.\n")
 
 
 def send_file(s):
@@ -76,9 +79,11 @@ def send_file(s):
         for x in range(number_of_loops):
             file_parts = f.read(1024)
             s.send(file_parts)
+            time.sleep(1)
         s.send(DICT['CONFIRMATION'])
         if s.recv(1024) == DICT['CONFIRMATION']:
             print("the file is stored in the server")
+
 
 
 def change_name(s):
@@ -127,12 +132,57 @@ def print_menu():
 
 
 def main():
+    print("Yo you need to login in order to have or use a cloud service")
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((HOST, PORT))
     except:
         print("oh oh something went wrong")
         sys.exit()
+    active = True
+    while active:
+        print("would you like to register, login or exit?")
+        answer = input()
+        if answer.upper() == "REGISTER":
+            print("great, lets begin")
+            print("please enter your username")
+            username = input()
+            print("please enter your password")
+            password = input()
+            message = DICT['REGISTER'] + (str(username)).encode() + ','.encode() + (str(password)).encode()
+            print(message)
+            s.send(message)
+            message = s.recv(1024)
+            if message == DICT['ERROR']:
+                print("username already taken")
+            elif message == DICT['CONFIRMATION']:
+                active = False
+            else:
+                print("oh oh something went wrong")
+        elif answer.upper() == "LOGIN":
+            print("great, lets begin")
+            print("please enter your username")
+            username = input()
+            print("please enter your password")
+            password = input()
+            message = DICT['LOGIN'] + (str(username)).encode() + ','.encode() + (str(password)).encode()
+            print(message)
+            s.send(message)
+            message = s.recv(1024)
+            if message == DICT['ERROR']:
+                print("Sorry your username or password is wrong")
+            elif message == DICT['CONFIRMATION']:
+                active = False
+            else:
+                print("oh oh something went wrong")
+
+        elif answer.upper() == "EXIT":
+            print("ok bye")
+            active = False
+        else:
+            print("sorry this isnt an option")
+            active = True
 
     print("Hello \nWelcome to my amazing file management program. you wont find any other in the market :)")
     print("At your disposal are 4 main tools.")
