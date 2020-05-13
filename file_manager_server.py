@@ -83,7 +83,7 @@ def login(s, cursor, username, password):
         list[-1] = USERNAME
         new_path = "\\".join(list)
         USER_DIRECTORY = new_path
-
+        check_files_and_send(s)
 
 def load_db(conn, cursor, data_list):
     # Fills the table
@@ -106,6 +106,21 @@ def create_user_folder():
     global USER_DIRECTORY
     USER_DIRECTORY = new_path
 
+
+def check_files_and_send(s):
+    arr = os.listdir(USER_DIRECTORY)
+    print(arr)
+    file_size = [",", ]
+    place = 0
+    for x in range (arr.__len__()):
+        path = USER_DIRECTORY + "\\" + arr[place]
+        file_size.append(os.path.getsize(path))
+        place += 1
+    file_data = arr + file_size
+    file_data = json.dumps(file_data)
+    s.send(file_data.encode())
+    print(file_size)
+    print(file_data)
 
 def send_file(client_socket, file_location):
     print(os.path.dirname(os.path.realpath(file_location)))
@@ -259,13 +274,6 @@ def receive_input(connection, max_buffer_size):
         return decoded_input
     except Exception:
         print("ERROR")
-
-
-def check_files_and_send():
-    arr = os.listdir(USER_DIRECTORY)
-    print(arr)
-    data = json.dumps(arr)
-    s.send(data)
 
 
 def main():
