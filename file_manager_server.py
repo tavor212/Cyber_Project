@@ -4,6 +4,7 @@ import os
 import sys
 import sqlite3
 import hashlib
+import json
 
 
 PORT = 1000
@@ -61,9 +62,13 @@ def login(s, cursor, username, password):
     global USERNAME, USER_DIRECTORY
     cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
     existing_name = cursor.fetchone()
-    print(existing_name)
-    cursor.execute("SELECT password FROM users_info WHERE user_name == ? AND password == ?", (username,) + (password.__hash__(),))
+    print(password)
+    password = hashlib.sha1(str(password).encode())
+    password = password.hexdigest()
+    print(password)
+    cursor.execute("SELECT password FROM users_info WHERE user_name == ? AND password == ?", (username,) + (password,))
     existing_password = cursor.fetchone()
+    print(existing_name)
     print(existing_password)
     if existing_name is None and existing_password is None:
         print("no user found")
@@ -83,7 +88,8 @@ def login(s, cursor, username, password):
 def load_db(conn, cursor, data_list):
     # Fills the table
     print("in load")
-    hashed_password = data_list[2].__hash__()
+    hashed_password = hashlib.sha1(str(data_list[2]).encode())
+    hashed_password = hashed_password.hexdigest()
     cursor.execute("INSERT INTO users_info VALUES (?,?,?)", (data_list[0], data_list[1], hashed_password))
     conn.commit()
 
@@ -255,9 +261,11 @@ def receive_input(connection, max_buffer_size):
         print("ERROR")
 
 
-def check_files():
+def check_files_and_send():
     arr = os.listdir(USER_DIRECTORY)
     print(arr)
+    data = json.dumps(arr)
+    s.send(data)
 
 
 def main():
