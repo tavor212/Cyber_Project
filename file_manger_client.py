@@ -7,24 +7,25 @@ from tkinter import *
 import tkinter as tk
 from functools import partial
 from tkinter import filedialog
+import json
 
 
 PORT = 1000
 HOST = '127.0.0.1'  # switch to the IP of the server PC if not local
 DICT = {'ERROR': "300".encode(), 'REGISTER': "70".encode(), 'LOGIN': "60".encode(),'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
+LIST_OF_FILES_PLUS_SIZE = []
 
 
 class Table(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        t = SimpleTable(self, 10, 1)
+        t = SimpleTable(self, LIST_OF_FILES_PLUS_SIZE.__len__()+1, 1)
         t.pack(side="top", fill="both")
         t.set(0, 0, "Storage")
 
 
-
 class SimpleTable(tk.Frame):
-    def __init__(self, parent, rows=10, columns=1):
+    def __init__(self, parent, rows, columns):
         # use black background so it "peeks through" to
         # form grid lines
         tk.Frame.__init__(self, parent, background="black")
@@ -82,7 +83,7 @@ def validateRegistration(s, username, password, tkwindow):
         error_screen()
     elif message == DICT['CONFIRMATION']:
         active = False
-        main_window(username,password, tkWindow)
+        main_window(s, username,password, tkWindow)
     else:
         print("oh oh something went wrong")
         error_screen()
@@ -99,16 +100,22 @@ def validateLogin(s, username, password, tkWindow):
         error_screen()
     elif message == DICT['CONFIRMATION']:
         active = False
-        main_window(username,password, tkWindow)
+        main_window(s, username,password, tkWindow)
     else:
         print("oh oh something went wrong")
         error_screen()
 
 
-def main_window(username, password, window):
+def main_window(s, username, password, window):
+    global LIST_OF_FILES_PLUS_SIZE
     window.destroy()
     print("username entered :", username.get())
     print("password entered :", password.get())
+    LIST_OF_FILES_PLUS_SIZE = s.recv(1024)
+    print(LIST_OF_FILES_PLUS_SIZE)
+    LIST_OF_FILES_PLUS_SIZE = LIST_OF_FILES_PLUS_SIZE.decode()
+    LIST_OF_FILES_PLUS_SIZE = json.loads(LIST_OF_FILES_PLUS_SIZE)
+    print(LIST_OF_FILES_PLUS_SIZE)
     data_table = Table()
     data_table.title("Cloud service")
     data_table.resizable(True,False)
@@ -152,7 +159,7 @@ def file_explorer():
     window.title('File Explorer')
 
     # Set window size
-    window.geometry("500x500")
+    window.geometry("600x250")
 
     # Set window background color
     window.config(background="white")
