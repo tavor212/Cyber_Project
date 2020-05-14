@@ -19,24 +19,54 @@ LIST_OF_FILES_PLUS_SIZE = []
 class Table(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        t = SimpleTable(self, LIST_OF_FILES_PLUS_SIZE.__len__()+1, 1)
+        t = SimpleTable(self, int((LIST_OF_FILES_PLUS_SIZE.__len__()+1)/2), 1)
         t.pack(side="top", fill="both")
         t.set(0, 0, "Storage")
 
 
 class SimpleTable(tk.Frame):
     def __init__(self, parent, rows, columns):
+        print(rows)
         # use black background so it "peeks through" to
         # form grid lines
         tk.Frame.__init__(self, parent, background="black")
         self._widgets = []
+        file_sizes = []
+        file_names = []
+        place = 0
+        while place < LIST_OF_FILES_PLUS_SIZE.index(","):
+            file_names.append(LIST_OF_FILES_PLUS_SIZE[place])
+            print(file_names[place])
+            print(LIST_OF_FILES_PLUS_SIZE[place])
+            print(place)
+            place += 1
+            if LIST_OF_FILES_PLUS_SIZE[place] == ",":
+                while place != LIST_OF_FILES_PLUS_SIZE.__len__():
+                    place += 1
+                    if place > LIST_OF_FILES_PLUS_SIZE.__len__()-1:
+                        pass
+                    else:
+                        file_sizes.append(LIST_OF_FILES_PLUS_SIZE[place])
+                    print(place)
+                    print(LIST_OF_FILES_PLUS_SIZE[place-1])
+                    print(file_sizes)
+                print(file_sizes)
+        print(file_names)
+        place = 0
         for row in range(rows):
             current_row = []
             for column in range(columns):
-                label = tk.Label(self, text="%s/%s" % ("martingay.png", "150MB"),borderwidth=0, width=10)
-                label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
-                current_row.append(label)
+                print("place" + str(place))
+                print("len" + str(file_names.__len__()))
+                if place != file_names.__len__():
+                    label = tk.Label(self, text="%s/%s" % (file_names[place], str(file_sizes[place]) +  " " + "MB"),borderwidth=0, width=10)
+                    label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
+                    print("row" + str(row))
+                    print("collum" + str(column))
+                    current_row.append(label)
+                    place += 1
             self._widgets.append(current_row)
+
 
         for column in range(columns):
             self.grid_columnconfigure(column, weight=1)
@@ -112,7 +142,6 @@ def main_window(s, username, password, window):
     print("username entered :", username.get())
     print("password entered :", password.get())
     LIST_OF_FILES_PLUS_SIZE = s.recv(1024)
-    print(LIST_OF_FILES_PLUS_SIZE)
     LIST_OF_FILES_PLUS_SIZE = LIST_OF_FILES_PLUS_SIZE.decode()
     LIST_OF_FILES_PLUS_SIZE = json.loads(LIST_OF_FILES_PLUS_SIZE)
     print(LIST_OF_FILES_PLUS_SIZE)
