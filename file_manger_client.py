@@ -14,14 +14,14 @@ PORT = 1000
 HOST = '127.0.0.1'  # switch to the IP of the server PC if not local
 DICT = {'ERROR': "300".encode(), 'REGISTER': "70".encode(), 'LOGIN': "60".encode(),'DOWNLOAD_FILE': "50".encode(), 'SEND_FILE': "40".encode(), 'CHANGE_NAME':  "30".encode(), 'DELETE': "20".encode(), 'EXIT': "10".encode(), 'CONFIRMATION': "1".encode()}
 LIST_OF_FILES_PLUS_SIZE = []
-
+CLIENT_FILE_PATH = ""
 
 class Table(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+        #print(LIST_OF_FILES_PLUS_SIZE)
         t = SimpleTable(self, int((LIST_OF_FILES_PLUS_SIZE.__len__()+1)/2), 1)
         t.pack(side="top", fill="both")
-        t.set(0, 0, "Storage")
 
 
 class SimpleTable(tk.Frame):
@@ -47,25 +47,20 @@ class SimpleTable(tk.Frame):
                         pass
                     else:
                         file_sizes.append(LIST_OF_FILES_PLUS_SIZE[place])
-                    print(place)
-                    print(LIST_OF_FILES_PLUS_SIZE[place-1])
-                    print(file_sizes)
-                print(file_sizes)
-        print(file_names)
         place = 0
         for row in range(rows):
             current_row = []
             for column in range(columns):
-                print("place" + str(place))
-                print("len" + str(file_names.__len__()))
-                if place != file_names.__len__():
-                    label = tk.Label(self, text="%s/%s" % (file_names[place], str(file_sizes[place]) +  " " + "MB"),borderwidth=0, width=10)
+                if row == 0 and column == 0 :
+                    label = tk.Label(self, text="Storage:")
                     label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
-                    print("row" + str(row))
-                    print("collum" + str(column))
-                    current_row.append(label)
-                    place += 1
-            self._widgets.append(current_row)
+                else:
+                    if place != file_names.__len__():
+                        label = tk.Label(self, text="%s/%s" % (file_names[place], str(file_sizes[place]) +  " " + "MB"),borderwidth=0, width=10)
+                        label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
+                        current_row.append(label)
+                        place += 1
+                self._widgets.append(current_row)
 
 
         for column in range(columns):
@@ -106,6 +101,7 @@ def login_page(s):
 
 def validateRegistration(s, username, password, tkwindow):
     message = DICT['REGISTER'] + (str(username.get())).encode() + ','.encode() + (str(password.get())).encode()
+    print(message)
     s.send(message)
     message = s.recv(1024)
     if message == DICT['ERROR']:
@@ -113,7 +109,8 @@ def validateRegistration(s, username, password, tkwindow):
         error_screen()
     elif message == DICT['CONFIRMATION']:
         active = False
-        main_window(s, username,password, tkWindow)
+        print("register")
+        main_window(s, username,password, tkwindow)
     else:
         print("oh oh something went wrong")
         error_screen()
@@ -138,6 +135,8 @@ def validateLogin(s, username, password, tkWindow):
 
 def main_window(s, username, password, window):
     global LIST_OF_FILES_PLUS_SIZE
+    print("here")
+    print(LIST_OF_FILES_PLUS_SIZE)
     window.destroy()
     print("username entered :", username.get())
     print("password entered :", password.get())
@@ -149,7 +148,8 @@ def main_window(s, username, password, window):
     data_table.title("Cloud service")
     data_table.resizable(True,False)
     """TODO match every button to a server function"""
-    Sendfile_Button = Button(data_table, text="Send file", command = file_explorer)
+    sendfile = partial(file_explorer, s, username, password, window)
+    Sendfile_Button = Button(data_table, text="Send file", command = sendfile)
     Downloadfile_Button = Button(data_table, text="Download file")
     Changename_Button = Button(data_table, text="Change name")
     Delete_Button = Button(data_table, text="Delete")
@@ -169,37 +169,37 @@ def error_screen():
     label_file_explorer.grid(column=0, row=0)
 
 
-def browseFiles(label_file_explorer):
+def browse_and_sendFiles(s, username, password, label_file_explorer, window):
     global CLIENT_FILE_PATH
-    filename = filedialog.askopenfilename(initialdir="/",title="Select a File",filetypes=(("Text files","*.txt*"),("all files","*.*")))
+    filepath = filedialog.askopenfilename(initialdir="/",title="Select a File",filetypes=(("Text files","*.txt*"),("all files","*.*")))
     # Change label contents
-    label_file_explorer.configure(text="File Opened: " + filename)
-    print(filename)
-    CLIENT_FILE_PATH = filename
+    label_file_explorer.configure(text="File Opened: " + filepath)
+    CLIENT_FILE_PATH = filepath
     print(CLIENT_FILE_PATH)
+    send_file(s)
+    window.destroy()
 
 
-
-def file_explorer():
+def file_explorer(s, username, password, window):
     # Create the root window
-    window = Tk()
+    explorer_window = Tk()
 
     # Set window title
-    window.title('File Explorer')
+    explorer_window.title('File Explorer')
 
     # Set window size
-    window.geometry("600x250")
+    explorer_window.geometry("600x250")
 
     # Set window background color
-    window.config(background="white")
+    explorer_window.config(background="white")
 
     # Create a File Explorer label
-    label_file_explorer = Label(window,text="File Explorer using Tkinter",width=100, height=4,fg="blue")
+    label_file_explorer = Label(explorer_window,text="File Explorer using Tkinter",width=100, height=4,fg="blue")
 
-    change_later = partial(browseFiles, label_file_explorer)
-    button_explore = Button(window,text="Browse Files",command=change_later)
+    browse = partial(browse_and_sendFiles, s, username, password, label_file_explorer, explorer_window)
+    button_explore = Button(explorer_window,text="Browse Files",command=browse)
 
-    button_exit = Button(window,text="Exit",command=exit)
+    button_exit = Button(explorer_window,text="Exit",command=exit)
 
     # Grid method is chosen for placing
     # the widgets at respective positions
@@ -212,7 +212,8 @@ def file_explorer():
     button_exit.grid(column=1, row=3)
 
     # Let the window wait for any events
-    window.mainloop()
+
+    explorer_window.mainloop()
 
 
 def download_file(s):
@@ -260,7 +261,7 @@ def download_file(s):
 
 def send_file(s):
     print("What is the path of the file you want to send?")
-    path = input()
+    path = CLIENT_FILE_PATH
     message = DICT['SEND_FILE'] + path.encode()
     s.send(message)
     file_size = os.path.getsize(path)
@@ -273,18 +274,20 @@ def send_file(s):
     print(number_of_loops)
     s.send((str(number_of_loops)).encode())
     print("What is the name of your created file?")
-    new_file_name = input()
+    new_file_name = "yes"
     s.send((str(new_file_name)).encode())
-
+    print("sent")
     """reads the file 1024 bytes at a time and sends to the server"""
     with open(path, 'rb') as f:
         for x in range(number_of_loops):
             file_parts = f.read(1024)
             s.send(file_parts)
-            time.sleep(1)
+            print("parts")
+        time.sleep(1)
         s.send(DICT['CONFIRMATION'])
         if s.recv(1024) == DICT['CONFIRMATION']:
             print("the file is stored in the server")
+
 
 
 
