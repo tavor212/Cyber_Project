@@ -34,6 +34,7 @@ def register(s, conn, cursor, username, password):
         s.send((str(CONFIRMATION)).encode())
         USERNAME = username
         create_user_folder()
+        check_files_and_send(s)
     else:
         try:
             print(all_ids)
@@ -51,6 +52,7 @@ def register(s, conn, cursor, username, password):
                 s.send((str(CONFIRMATION)).encode())
                 USERNAME = username
                 create_user_folder()
+                check_files_and_send(s)
             else:
                 print("sorry the username is already used")
                 s.send((str(ERROR)).encode())
@@ -163,12 +165,12 @@ def store_file(client_socket, file_location):
     new_file_name = (client_socket.recv(1024)).decode()
     print(new_file_name)
     completeName = os.path.join(USER_DIRECTORY, new_file_name + "." + file_format)
+    print(completeName)
     new_file = open(completeName, "wb")
     try:
         """recv the file parts x times"""
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
-        # last_digit = new_file
         new_file.close()
         if client_socket.recv(1024).decode() == str(CONFIRMATION):
             print("the file was succsfuly transfered")
