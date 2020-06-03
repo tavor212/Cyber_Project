@@ -132,9 +132,9 @@ def main_window(username, password, tkwindow):
 
 
 def validateRegistration(username, password):
-    print("username entered :", username.get())
-    print("password entered :", password.get())
-    return
+    print("username entered :", username)
+    print("password entered :", password)
+
 
 
 
