@@ -5,6 +5,7 @@ import sys
 import sqlite3
 import hashlib
 import json
+import time
 
 
 PORT = 1000
@@ -110,6 +111,7 @@ def create_user_folder():
 
 
 def check_files_and_send(s):
+    print("in")
     arr = os.listdir(USER_DIRECTORY)
     print(arr)
     file_size = [",", ]
@@ -121,7 +123,7 @@ def check_files_and_send(s):
     file_data = arr + file_size
     file_data = json.dumps(file_data)
     s.send(file_data.encode())
-    print(file_size)
+    print("lists")
     print(file_data)
 
 def send_file(client_socket, file_location):
@@ -210,11 +212,19 @@ def delete_file(client_socket, file_location):
 
 def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
     active = True
+    counter = 1
     while active:
+        print("waiting for request")
+        print(counter)
+        if counter > 2:
+            print("here")
+            check_files_and_send(connection)
+        print("waiting some more")
         client_input = receive_input(connection, max_buffer_size)
         print(client_input)
         print(type(client_input))
         print(connection)
+        counter += 1
         try:
             if client_input == str(EXIT):
                 print("Client is requesting to quit")
@@ -223,26 +233,33 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
                 message = "Connection " + ip + ": " + port + " closed"
                 print(message)
                 active = False
+
             elif client_input[:2] == str(REGISTER):
                 client_input = client_input[2:]
                 data = client_input.split(',')
                 print(data[0])
                 print(data[1])
                 register(connection, conn, cursor, data[0], data[1])
+
             elif client_input[:2] == str(LOGIN):
                 client_input = client_input[2:]
                 data = client_input.split(',')
                 login(connection, cursor, data[0], data[1])
+
             elif client_input[:2] == str(DOWNLOAD_FILE):
+
                 file_location = client_input[2:]
                 send_file(connection, file_location)
+
             elif client_input[:2] == str(STORE_FILE):
                 file_location = client_input[2:]
                 store_file(connection, file_location)
+
             elif client_input[:2] == str(DELETE):
                 file_location = client_input[2:]
                 print(file_location)
                 delete_file(connection, file_location)
+
             elif client_input[:2] == str(CHANGE_NAME):
                 """splits the client info using the ' ' in between the file path and the new name"""
                 client_input = client_input[2:]
@@ -251,11 +268,13 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
                 file_location = client_input[0]
                 new_file_name = client_input[1]
                 change_file_name(connection, file_location, new_file_name)
+
             else:
                 connection.send("oh oh something went wrong".encode())
                 print("there is a problem with the input")
                 connection.close()
                 active = False
+
         except:
             print("client ended the connection unexpectedly")
             connection.close()
