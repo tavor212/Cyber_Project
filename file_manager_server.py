@@ -122,7 +122,6 @@ def check_files_and_send(s):
         place += 1
     file_data = file_names + file_size
     file_data = json.dumps(file_data)
-    print(type(file_data))
     print("lists")
     print(file_data)
     s.send(file_data.encode())
@@ -204,14 +203,15 @@ def change_file_name(client_socket, file_location, new_file_name):
         client_socket.send((str(ERROR)).encode())
 
 
-def delete_file(client_socket, file_location):
-    check_files_and_send(client_socket)
-    if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
-        if os.path.exists(file_location):
-            os.remove(file_location)
-            client_socket.send(str(CONFIRMATION).encode())
-        else:
-            client_socket.send(str(ERROR).encode())
+def delete_file(client_socket, file_name):
+    print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    print(USER_DIRECTORY + "\\" + file_name)
+    if os.path.exists(USER_DIRECTORY + "\\" + file_name):
+        print("in")
+        os.remove(USER_DIRECTORY + "\\" + file_name)
+        print("after remove")
+        client_socket.send(str(CONFIRMATION).encode())
+        check_files_and_send(client_socket)
     else:
         client_socket.send(str(ERROR).encode())
 
@@ -220,7 +220,6 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
     active = True
     while active:
         print("waiting for request")
-        print("waiting some more")
         client_input = receive_input(connection, max_buffer_size)
         print(client_input)
         print(type(client_input))
@@ -257,7 +256,6 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
 
             elif client_input[:2] == str(DELETE):
                 file_location = client_input[2:]
-                print(file_location)
                 delete_file(connection, file_location)
 
             elif client_input[:2] == str(CHANGE_NAME):
