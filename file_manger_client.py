@@ -8,6 +8,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import filedialog
 import json
+from tkinter import simpledialog
 
 
 PORT = 1000
@@ -89,12 +90,10 @@ def login_page(s):
 
     # register button
     validateR = partial(validateRegistration, s, username, password, tkWindow)
-    """TODO - when register is pressed, check correct terms and then wait for login"""
     registerButton = Button(tkWindow, text="Register", command=validateR).grid(row=4, column=1)
 
     # login button stuff
     validateL = partial(validateLogin, s, username, password, tkWindow)
-    """TODO - when login is pressed, check user existes and then go to main window"""
     loginButton = Button(tkWindow, text="Login", command=validateL).grid(row=4, column=0)
     tkWindow.mainloop()
 
@@ -136,19 +135,21 @@ def validateLogin(s, username, password, tkWindow):
 def main_window(s, username, password, window):
     global LIST_OF_FILES_PLUS_SIZE
     print("here")
-    print(LIST_OF_FILES_PLUS_SIZE)
     window.destroy()
     print("username entered :", username.get())
     print("password entered :", password.get())
     LIST_OF_FILES_PLUS_SIZE = s.recv(1024)
+    print("help")
+    print(LIST_OF_FILES_PLUS_SIZE)
     LIST_OF_FILES_PLUS_SIZE = LIST_OF_FILES_PLUS_SIZE.decode()
+    print(LIST_OF_FILES_PLUS_SIZE)
     LIST_OF_FILES_PLUS_SIZE = json.loads(LIST_OF_FILES_PLUS_SIZE)
     print(LIST_OF_FILES_PLUS_SIZE)
     data_table = Table()
     data_table.title("Cloud service")
     data_table.resizable(True,False)
     """TODO match every button to a server function"""
-    sendfile = partial(file_explorer, s, username, password, window)
+    sendfile = partial(file_explorer, s, username, password, data_table)
     Sendfile_Button = Button(data_table, text="Send file", command = sendfile)
     Downloadfile_Button = Button(data_table, text="Download file")
     Changename_Button = Button(data_table, text="Change name")
@@ -165,7 +166,7 @@ def error_screen():
     window.title('ERROR')
     window.geometry("600x200")
     window.config(background="white")
-    label_file_explorer = Label(window, text="oh oh something went wrong. Try switching your username", width=100, height=4, fg="blue")
+    label_file_explorer = Label(window, text="oh oh something went wrong.", width=100, height=4, fg="blue")
     label_file_explorer.grid(column=0, row=0)
 
 
@@ -177,11 +178,12 @@ def browse_and_sendFiles(s, username, password, label_file_explorer, window):
     CLIENT_FILE_PATH = filepath
     print(CLIENT_FILE_PATH)
     send_file(s)
-    window.destroy()
+    main_window(s, username, password, window)
 
 
 def file_explorer(s, username, password, window):
     # Create the root window
+    window.destroy()
     explorer_window = Tk()
 
     # Set window title
@@ -199,8 +201,6 @@ def file_explorer(s, username, password, window):
     browse = partial(browse_and_sendFiles, s, username, password, label_file_explorer, explorer_window)
     button_explore = Button(explorer_window,text="Browse Files",command=browse)
 
-    button_exit = Button(explorer_window,text="Exit",command=exit)
-
     # Grid method is chosen for placing
     # the widgets at respective positions
     # in a table like structure by
@@ -208,8 +208,6 @@ def file_explorer(s, username, password, window):
     label_file_explorer.grid(column=0, row=0)
 
     button_explore.grid(column=0, row=1)
-
-    button_exit.grid(column=1, row=3)
 
     # Let the window wait for any events
 
@@ -265,7 +263,6 @@ def send_file(s):
     message = DICT['SEND_FILE'] + path.encode()
     s.send(message)
     file_size = os.path.getsize(path)
-
     """calculates the number of times the server will need to recv 1024 bytes"""
     number_of_loops = file_size / 1024
     number_of_loops = int(number_of_loops)
@@ -274,7 +271,7 @@ def send_file(s):
     print(number_of_loops)
     s.send((str(number_of_loops)).encode())
     print("What is the name of your created file?")
-    new_file_name = "yes"
+    new_file_name = simpledialog.askstring(title = "name gathering", prompt ="what would you like to name your file?")
     s.send((str(new_file_name)).encode())
     print("sent")
     """reads the file 1024 bytes at a time and sends to the server"""
@@ -326,6 +323,26 @@ def exit(s):
     if message == DICT['EXIT']:
         print("Ok bye :(")
         sys.exit()
+
+
+def give_name():
+    tkWindow = Tk()
+    tkWindow.geometry('300x100')
+    tkWindow.title('Tkinter name form')
+    tkWindow.resizable(False, False)
+
+    #name label
+    filelabel = Label(tkWindow, text="What would you like to name your file?").grid(row=0, column=0)
+    new_filename = StringVar()
+    fileEntry = Entry(tkWindow, textvariable=new_filename).grid(row=1, column=0)
+
+    #send button
+    name = partial(send_name, new_filename)
+    sendButton = Button(tkWindow, text="Send", command=name).grid(row=4, column=1)
+
+
+def send_name(file_name):
+    return file_name
 
 
 def print_menu():
