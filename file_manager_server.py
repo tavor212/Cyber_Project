@@ -177,9 +177,7 @@ def store_file(client_socket, file_location):
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
         new_file.close()
-        if client_socket.recv(1024).decode() == str(CONFIRMATION):
-            print("the file was succsfuly transfered")
-            client_socket.send((str(CONFIRMATION)).encode())
+        print("why")
     except Exception:
         print("something went wrong")
         client_socket.send((str(ERROR)).encode())
