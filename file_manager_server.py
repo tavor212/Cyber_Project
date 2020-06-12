@@ -112,21 +112,24 @@ def create_user_folder():
 
 def check_files_and_send(s):
     print("in")
-    arr = os.listdir(USER_DIRECTORY)
-    print(arr)
+    file_names = os.listdir(USER_DIRECTORY)
+    print(file_names)
     file_size = [",", ]
     place = 0
-    for x in range (arr.__len__()):
-        path = USER_DIRECTORY + "\\" + arr[place]
+    for x in range (file_names.__len__()):
+        path = USER_DIRECTORY + "\\" + file_names[place]
         file_size.append(os.path.getsize(path))
         place += 1
-    file_data = arr + file_size
+    file_data = file_names + file_size
     file_data = json.dumps(file_data)
-    s.send(file_data.encode())
+    print(type(file_data))
     print("lists")
     print(file_data)
+    s.send(file_data.encode())
+
 
 def send_file(client_socket, file_location):
+    check_files_and_send(client_socket)
     print(os.path.dirname(os.path.realpath(file_location)))
     print(USER_DIRECTORY)
     if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
@@ -159,6 +162,7 @@ def send_file(client_socket, file_location):
         client_socket.send((str(ERROR)).encode())
 
 def store_file(client_socket, file_location):
+    check_files_and_send(client_socket)
     print(file_location)
     file_format = file_location.split(".")[-1]
     """gets the number of times he needs to recv from the client"""
@@ -183,6 +187,7 @@ def store_file(client_socket, file_location):
 
 
 def change_file_name(client_socket, file_location, new_file_name):
+    check_files_and_send(client_socket)
     print(file_location)
     if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
         if os.path.exists(file_location):
@@ -200,6 +205,7 @@ def change_file_name(client_socket, file_location, new_file_name):
 
 
 def delete_file(client_socket, file_location):
+    check_files_and_send(client_socket)
     if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
         if os.path.exists(file_location):
             os.remove(file_location)
@@ -212,19 +218,13 @@ def delete_file(client_socket, file_location):
 
 def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
     active = True
-    counter = 1
     while active:
         print("waiting for request")
-        print(counter)
-        if counter > 2:
-            print("here")
-            check_files_and_send(connection)
         print("waiting some more")
         client_input = receive_input(connection, max_buffer_size)
         print(client_input)
         print(type(client_input))
         print(connection)
-        counter += 1
         try:
             if client_input == str(EXIT):
                 print("Client is requesting to quit")
