@@ -287,9 +287,8 @@ def send_file(s):
             s.send(file_parts)
             print("parts")
         time.sleep(2)
-        s.send(DICT['CONFIRMATION'])
-        if s.recv(1024) == DICT['CONFIRMATION']:
-            print("the file is stored in the server")
+
+
 
 
 def change_name(s):
