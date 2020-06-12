@@ -21,7 +21,7 @@ class Table(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         #print(LIST_OF_FILES_PLUS_SIZE)
-        t = SimpleTable(self, int((LIST_OF_FILES_PLUS_SIZE.__len__()+1)/2), 1)
+        t = SimpleTable(self, int(((LIST_OF_FILES_PLUS_SIZE.__len__())+1)/2), 1)
         t.pack(side="top", fill="both")
 
 
@@ -148,12 +148,19 @@ def main_window(s, username, password, window):
     data_table = Table()
     data_table.title("Cloud service")
     data_table.resizable(True,False)
-    """TODO match every button to a server function"""
+
     sendfile = partial(file_explorer, s, username, password, data_table)
     Sendfile_Button = Button(data_table, text="Send file", command = sendfile)
+
+
     Downloadfile_Button = Button(data_table, text="Download file")
+
+
     Changename_Button = Button(data_table, text="Change name")
-    Delete_Button = Button(data_table, text="Delete")
+
+    deletefile = partial(delete, s, username, password, data_table)
+    Delete_Button = Button(data_table, text="Delete", command = deletefile)
+
     Sendfile_Button.pack(side=LEFT, fill="x")
     Downloadfile_Button.pack(side=LEFT, fill="x")
     Changename_Button.pack(side=LEFT, fill="x")
@@ -212,7 +219,6 @@ def file_explorer(s, username, password, window):
     # Let the window wait for any events
 
     explorer_window.mainloop()
-
 
 def download_file(s):
     print("What is the file path")
@@ -280,12 +286,10 @@ def send_file(s):
             file_parts = f.read(1024)
             s.send(file_parts)
             print("parts")
-        time.sleep(1)
+        time.sleep(2)
         s.send(DICT['CONFIRMATION'])
         if s.recv(1024) == DICT['CONFIRMATION']:
             print("the file is stored in the server")
-
-
 
 
 def change_name(s):
@@ -305,14 +309,20 @@ def change_name(s):
         print("Oh oh something went wrong. The file was not changed\n")
 
 
-def delete(s):
+def delete(s, username, password, window):
     print("What is the file path?")
-    message = DICT['DELETE'] + input().encode()
+    file_name = simpledialog.askstring(title = "name gathering", prompt ="what file would you like to delete (include the format)?")
+    message = DICT['DELETE'] + file_name.encode()
+    print("before sent")
     s.send(message)
+    print("after send")
     message = s.recv(1024)
+    print("here?")
     if message == DICT['CONFIRMATION']:
         print("The file was deleted!!\n")
+        main_window(s,username, password, window)
     if message == DICT['ERROR']:
+        error_screen()
         print("Oh oh. Something went wrong. The file was not deleted")
 
 
@@ -323,26 +333,6 @@ def exit(s):
     if message == DICT['EXIT']:
         print("Ok bye :(")
         sys.exit()
-
-
-def give_name():
-    tkWindow = Tk()
-    tkWindow.geometry('300x100')
-    tkWindow.title('Tkinter name form')
-    tkWindow.resizable(False, False)
-
-    #name label
-    filelabel = Label(tkWindow, text="What would you like to name your file?").grid(row=0, column=0)
-    new_filename = StringVar()
-    fileEntry = Entry(tkWindow, textvariable=new_filename).grid(row=1, column=0)
-
-    #send button
-    name = partial(send_name, new_filename)
-    sendButton = Button(tkWindow, text="Send", command=name).grid(row=4, column=1)
-
-
-def send_name(file_name):
-    return file_name
 
 
 def print_menu():
