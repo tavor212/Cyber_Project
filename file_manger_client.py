@@ -99,36 +99,42 @@ def login_page(s):
 
 
 def validateRegistration(s, username, password, tkwindow):
-    message = DICT['REGISTER'] + (str(username.get())).encode() + ','.encode() + (str(password.get())).encode()
-    print(message)
-    s.send(message)
-    message = s.recv(1024)
-    if message == DICT['ERROR']:
-        print("username already taken")
-        error_screen()
-    elif message == DICT['CONFIRMATION']:
-        active = False
-        print("register")
-        main_window(s, username,password, tkwindow)
+    if (username != "" and password != "") or (" " not in username or " " not in password):
+        message = DICT['REGISTER'] + (str(username.get())).encode() + ','.encode() + (str(password.get())).encode()
+        print(message)
+        s.send(message)
+        message = s.recv(1024)
+        if message == DICT['ERROR']:
+            print("username already taken")
+            error_screen()
+        elif message == DICT['CONFIRMATION']:
+            active = False
+            print("register")
+            main_window(s, username,password, tkwindow)
+        else:
+            print("oh oh something went wrong")
+            error_screen()
+        return
     else:
-        print("oh oh something went wrong")
         error_screen()
-    return
 
 
 def validateLogin(s, username, password, tkWindow):
-    message = DICT['LOGIN'] + (str(username.get())).encode() + ','.encode() + (str(password.get())).encode()
-    print(message)
-    s.send(message)
-    message = s.recv(1024)
-    if message == DICT['ERROR']:
-        print("Sorry your username or password is wrong")
-        error_screen()
-    elif message == DICT['CONFIRMATION']:
-        active = False
-        main_window(s, username,password, tkWindow)
+    if username != "" and password !="":
+        message = DICT['LOGIN'] + (str(username.get())).encode() + ','.encode() + (str(password.get())).encode()
+        print(message)
+        s.send(message)
+        message = s.recv(1024)
+        if message == DICT['ERROR']:
+            print("Sorry your username or password is wrong")
+            error_screen()
+        elif message == DICT['CONFIRMATION']:
+            active = False
+            main_window(s, username,password, tkWindow)
+        else:
+            print("oh oh something went wrong")
+            error_screen()
     else:
-        print("oh oh something went wrong")
         error_screen()
 
 
@@ -224,30 +230,37 @@ def file_explorer(s, username, password, window):
 def download_file(s, username, password, data_table):
     print("What is the file name")
     file_name = simpledialog.askstring(title = "name gathering", prompt ="what is the file name you want to download(include format)?")
-    file_format = file_name.split(".")[-1]
-    print(file_format)
     message = DICT['DOWNLOAD_FILE'] + file_name.encode()
     s.send(message)
     message = s.recv(1024)
     print(message)
     if message == DICT['CONFIRMATION']:
         print("Ok lets start")
-        file_parts = s.recv(1024)
-        new_file = open(file_name, "wb")
-        try:
-            new_file.write(file_parts)
-        except:
-            file_parts = ""
-        while file_parts != "":
+        check_path = os.path.dirname(os.path.realpath(__file__))
+        check_path = check_path + "\\" + file_name
+        print(check_path)
+        if not os.path.exists(check_path):
+            print("in")
             file_parts = s.recv(1024)
-            if file_parts == DICT['CONFIRMATION']:
-                print("The file was succsfuly transfered")
-                file_parts = ""
-                new_file.close()
-                main_window(s, username, password, data_table)
-            else:
+            print(file_parts)
+            new_file = open(file_name, "wb")
+            try:
                 new_file.write(file_parts)
-
+            except:
+                file_parts = ""
+            while file_parts != "":
+                file_parts = s.recv(1024)
+                print(file_parts)
+                if file_parts == DICT['CONFIRMATION']:
+                    print("The file was succsfuly transfered")
+                    file_parts = ""
+                    new_file.close()
+                    main_window(s, username, password, data_table)
+                else:
+                    new_file.write(file_parts)
+        else:
+            print("already in folder")
+            error_screen()
     else:
         print("not in user directory.\n")
         error_screen()
@@ -280,11 +293,18 @@ def send_file(s):
 
 def change_name(s, username, password, data_table):
     print("What is the path of the file you want to change the name of")
+    error = 0
     path = simpledialog.askstring(title = "name gathering", prompt ="what is the name of the file you want to change(include format)?")
-    file_format = path.split(".")[-1]
+    file_format = ""
+    try:
+        file_format = path.split(".")[-1]
+    except:
+        error_screen()
+        error = 1
     print(file_format)
     print("What is the new file name?")
-    new_name = simpledialog.askstring(title = "name gathering", prompt ="what would you like to name your file?")
+    if error != 1:
+        new_name = simpledialog.askstring(title = "name gathering", prompt ="what would you like to name your file?")
     new_name = new_name + "." + file_format
     print(new_name)
     """adds a * in between the variables so i can seperate them later in the server"""
