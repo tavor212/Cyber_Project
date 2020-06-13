@@ -22,10 +22,10 @@ EXIT = 10
 CONFIRMATION = 1
 USERNAME = ""
 PROJECT_PATH = os.path.abspath(__file__)
-USER_DIRECTORY = ""
+user_directory = ""
 
 
-def register(s, conn, cursor, username, password):
+def register(s, conn, cursor, username, password, user_directory):
     global USERNAME
     cursor.execute("SELECT ID FROM users_info")
     all_ids = cursor.fetchall()
@@ -34,8 +34,8 @@ def register(s, conn, cursor, username, password):
         load_db(conn, cursor, [1,username,password])
         s.send((str(CONFIRMATION)).encode())
         USERNAME = username
-        create_user_folder()
-        check_files_and_send(s)
+        user_directory = create_user_folder(user_directory)
+        user_directory = check_files_and_send(s, user_directory)
     else:
         try:
             print(all_ids)
@@ -52,8 +52,9 @@ def register(s, conn, cursor, username, password):
                 load_db(conn, cursor, [last_ID[0] + 1, username, password])
                 s.send((str(CONFIRMATION)).encode())
                 USERNAME = username
-                create_user_folder()
-                check_files_and_send(s)
+                user_directory = create_user_folder(user_directory)
+                user_directory = check_files_and_send(s, user_directory)
+                return user_directory
             else:
                 print("sorry the username is already used")
                 s.send((str(ERROR)).encode())
@@ -61,8 +62,8 @@ def register(s, conn, cursor, username, password):
             print("something went wrong")
 
 
-def login(s, cursor, username, password):
-    global USERNAME, USER_DIRECTORY
+def login(s, cursor, username, password, user_directory):
+    global USERNAME
     cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
     existing_name = cursor.fetchone()
     print(password)
@@ -85,8 +86,11 @@ def login(s, cursor, username, password):
         list = PROJECT_PATH.split('\\')
         list[-1] = USERNAME
         new_path = "\\".join(list)
-        USER_DIRECTORY = new_path
-        check_files_and_send(s)
+        user_directory = new_path
+        print("aaaaaaaaaaaaaaaaaaaaa")
+        print(user_directory)
+        user_directory = check_files_and_send(s, user_directory)
+        return user_directory
 
 def load_db(conn, cursor, data_list):
     # Fills the table
@@ -97,7 +101,7 @@ def load_db(conn, cursor, data_list):
     conn.commit()
 
 
-def create_user_folder():
+def create_user_folder(user_directory):
     print(PROJECT_PATH)
     list = PROJECT_PATH.split('\\')
     print(list)
@@ -106,18 +110,19 @@ def create_user_folder():
     new_path = "\\".join(list)
     print(new_path)
     os.mkdir(os.path.abspath(new_path))
-    global USER_DIRECTORY
-    USER_DIRECTORY = new_path
+    user_directory = new_path
+    return user_directory
 
 
-def check_files_and_send(s):
+def check_files_and_send(s, user_directory):
     print("in")
-    file_names = os.listdir(USER_DIRECTORY)
+    print(user_directory)
+    file_names = os.listdir(user_directory)
     print(file_names)
     file_size = [",", ]
     place = 0
     for x in range (file_names.__len__()):
-        path = USER_DIRECTORY + "\\" + file_names[place]
+        path = user_directory + "\\" + file_names[place]
         print(path)
         file_size.append(os.path.getsize(path))
         place += 1
@@ -126,12 +131,13 @@ def check_files_and_send(s):
     print("lists")
     print(file_data)
     s.send(file_data.encode())
+    return user_directory
 
 
-def send_file(client_socket, file_name):
-    print(USER_DIRECTORY)
-    if os.path.exists(USER_DIRECTORY + "\\" + file_name):
-        file_location = USER_DIRECTORY + "\\" + file_name
+def send_file(client_socket, file_name, user_directory):
+    print(user_directory)
+    if os.path.exists(user_directory + "\\" + file_name):
+        file_location = user_directory + "\\" + file_name
         print("path exists")
         client_socket.send((str(CONFIRMATION)).encode())
         file_size = os.path.getsize(file_location)
@@ -146,11 +152,11 @@ def send_file(client_socket, file_name):
                 file_parts = f.read(1024)
                 client_socket.send(file_parts)
             client_socket.send((str(CONFIRMATION)).encode())
-            check_files_and_send(client_socket)
+            user_directory = check_files_and_send(client_socket, user_directory)
     else:
         client_socket.send((str(ERROR)).encode())
 
-def store_file(client_socket, file_name):
+def store_file(client_socket, file_name, user_directory):
     print(file_name)
     file_format = file_name.split(".")[-1]
     """gets the number of times he needs to recv from the client"""
@@ -158,7 +164,7 @@ def store_file(client_socket, file_name):
     print(number_of_loops)
     new_file_name = (client_socket.recv(1024)).decode()
     print(new_file_name)
-    completeName = os.path.join(USER_DIRECTORY, new_file_name + "." + file_format)
+    completeName = os.path.join(user_directory, new_file_name + "." + file_format)
     print(completeName)
     new_file = open(completeName, "wb")
     try:
@@ -166,45 +172,61 @@ def store_file(client_socket, file_name):
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
         new_file.close()
-        check_files_and_send(client_socket)
+        check_files_and_send(client_socket, user_directory)
     except Exception:
         print("something went wrong")
         client_socket.send((str(ERROR)).encode())
 
 
-def change_file_name(client_socket, file_name, new_file_name):
+def change_file_name(client_socket, file_name, new_file_name, user_directory):
     print("in change file")
     print(file_name)
-    print (USER_DIRECTORY + "\\" + file_name)
-    old_path = USER_DIRECTORY + "\\" + file_name
+    print (user_directory + "\\" + file_name)
+    old_path = user_directory + "\\" + file_name
     if os.path.exists(old_path):
         """gets the dir of the file with dirname"""
         """creates a new path with the directory, back slash and the new file name"""
-        new_path = USER_DIRECTORY + "\\" + new_file_name
+        new_path = user_directory + "\\" + new_file_name
         print(new_path)
         """the func rename basiclly copies the original just with a diffrent name"""
         os.rename(old_path, new_path)
         client_socket.send((str(CONFIRMATION)).encode())
-        check_files_and_send(client_socket)
+        check_files_and_send(client_socket, user_directory)
     else:
         client_socket.send((str(ERROR)).encode())
 
 
-def delete_file(client_socket, file_name):
+def delete_file(client_socket, file_name, user_directory):
     print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-    print(USER_DIRECTORY + "\\" + file_name)
-    if os.path.exists(USER_DIRECTORY + "\\" + file_name):
+    print(user_directory + "\\" + file_name)
+    if os.path.exists(user_directory + "\\" + file_name):
         print("in")
-        os.remove(USER_DIRECTORY + "\\" + file_name)
+        os.remove(user_directory + "\\" + file_name)
         print("after remove")
         client_socket.send(str(CONFIRMATION).encode())
-        check_files_and_send(client_socket)
+        check_files_and_send(client_socket, user_directory)
     else:
         client_socket.send(str(ERROR).encode())
 
 
-def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
+def handel_thread(connection, ip, port, conn, cursor, user_directory, max_buffer_size=5120):
     active = True
+    client_input = receive_input(connection, max_buffer_size)
+    print(client_input)
+    print(type(client_input))
+    print(connection)
+    if client_input[:2] == str(REGISTER):
+        client_input = client_input[2:]
+        data = client_input.split(',')
+        print(data[0])
+        print(data[1])
+        user_directory = register(connection, conn, cursor, data[0], data[1], user_directory)
+
+    if client_input[:2] == str(LOGIN):
+        client_input = client_input[2:]
+        data = client_input.split(',')
+        user_directory = login(connection, cursor, data[0], data[1], user_directory)
+
     while active:
         print("waiting for request")
         client_input = receive_input(connection, max_buffer_size)
@@ -220,30 +242,17 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
                 print(message)
                 active = False
 
-            elif client_input[:2] == str(REGISTER):
-                client_input = client_input[2:]
-                data = client_input.split(',')
-                print(data[0])
-                print(data[1])
-                register(connection, conn, cursor, data[0], data[1])
-
-            elif client_input[:2] == str(LOGIN):
-                client_input = client_input[2:]
-                data = client_input.split(',')
-                login(connection, cursor, data[0], data[1])
-
             elif client_input[:2] == str(DOWNLOAD_FILE):
-
                 file_location = client_input[2:]
-                send_file(connection, file_location)
+                send_file(connection, file_location, user_directory)
 
             elif client_input[:2] == str(STORE_FILE):
                 file_name = client_input[2:]
-                store_file(connection, file_name)
+                store_file(connection, file_name, user_directory)
 
             elif client_input[:2] == str(DELETE):
                 file_name = client_input[2:]
-                delete_file(connection, file_name)
+                delete_file(connection, file_name, user_directory)
 
             elif client_input[:2] == str(CHANGE_NAME):
                 """splits the client info using the ' ' in between the file path and the new name"""
@@ -254,7 +263,7 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
                 new_file_name = client_input[1]
                 print(file_name)
                 print(new_file_name)
-                change_file_name(connection, file_name, new_file_name)
+                change_file_name(connection, file_name, new_file_name, user_directory)
 
             else:
                 connection.send("oh oh something went wrong".encode())
@@ -284,8 +293,10 @@ def receive_input(connection, max_buffer_size):
         print("ERROR")
 
 
+
 def main():
     print("hello")
+    user_directory = ""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     """tells the operating system to reuse the port if something crashes or a user is disconnecting"""
@@ -319,7 +330,7 @@ def main():
             ip, port = str(address[0]), str(address[1])
             print("Connected with " + ip + " :" + port)
             """sends the threads to a func that checks their requests and redirects them"""
-            threading.Thread(target=handel_thread, args=(connection, ip, port, conn, cursor)).start()
+            threading.Thread(target=handel_thread, args=(connection, ip, port, conn, cursor, user_directory)).start()
 
 
         except:
