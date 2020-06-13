@@ -183,20 +183,20 @@ def store_file(client_socket, file_location):
         client_socket.send((str(ERROR)).encode())
 
 
-def change_file_name(client_socket, file_location, new_file_name):
-    check_files_and_send(client_socket)
-    print(file_location)
-    if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
-        if os.path.exists(file_location):
-            """gets the dir of the file with dirname"""
-            dir_path = os.path.dirname(file_location)
-            """creates a new path with the directory, back slash and the new file name"""
-            new_path = dir_path + "\\" + new_file_name
-            """the func rename basiclly copies the original just with a diffrent name"""
-            os.rename(file_location, new_path)
-            client_socket.send((str(CONFIRMATION)).encode())
-        else:
-            client_socket.send((str(ERROR)).encode())
+def change_file_name(client_socket, file_name, new_file_name):
+    print("in change file")
+    print(file_name)
+    print (USER_DIRECTORY + "\\" + file_name)
+    old_path = USER_DIRECTORY + "\\" + file_name
+    if os.path.exists(old_path):
+        """gets the dir of the file with dirname"""
+        """creates a new path with the directory, back slash and the new file name"""
+        new_path = USER_DIRECTORY + "\\" + new_file_name
+        print(new_path)
+        """the func rename basiclly copies the original just with a diffrent name"""
+        os.rename(old_path, new_path)
+        client_socket.send((str(CONFIRMATION)).encode())
+        check_files_and_send(client_socket)
     else:
         client_socket.send((str(ERROR)).encode())
 
@@ -253,17 +253,19 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
                 store_file(connection, file_location)
 
             elif client_input[:2] == str(DELETE):
-                file_location = client_input[2:]
-                delete_file(connection, file_location)
+                file_name = client_input[2:]
+                delete_file(connection, file_name)
 
             elif client_input[:2] == str(CHANGE_NAME):
                 """splits the client info using the ' ' in between the file path and the new name"""
                 client_input = client_input[2:]
                 print(client_input.split("*"))
                 client_input = client_input.split("*")
-                file_location = client_input[0]
+                file_name = client_input[0]
                 new_file_name = client_input[1]
-                change_file_name(connection, file_location, new_file_name)
+                print(file_name)
+                print(new_file_name)
+                change_file_name(connection, file_name, new_file_name)
 
             else:
                 connection.send("oh oh something went wrong".encode())
