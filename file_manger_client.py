@@ -148,6 +148,7 @@ def main_window(s, username, password, window):
     data_table = Table()
     data_table.title("Cloud service")
     data_table.resizable(True,False)
+    LIST_OF_FILES_PLUS_SIZE = []
 
     sendfile = partial(file_explorer, s, username, password, data_table)
     Sendfile_Button = Button(data_table, text="Send file", command = sendfile)
@@ -274,7 +275,7 @@ def send_file(s):
             file_parts = f.read(1024)
             s.send(file_parts)
             print("parts")
-        time.sleep(2)
+        #time.sleep(2)
 
 
 def change_name(s, username, password, data_table):
