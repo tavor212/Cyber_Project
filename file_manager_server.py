@@ -160,10 +160,9 @@ def send_file(client_socket, file_location):
         print("not in user directory")
         client_socket.send((str(ERROR)).encode())
 
-def store_file(client_socket, file_location):
-    check_files_and_send(client_socket)
-    print(file_location)
-    file_format = file_location.split(".")[-1]
+def store_file(client_socket, file_name):
+    print(file_name)
+    file_format = file_name.split(".")[-1]
     """gets the number of times he needs to recv from the client"""
     number_of_loops = int((client_socket.recv(1024)).decode())
     print(number_of_loops)
@@ -177,7 +176,7 @@ def store_file(client_socket, file_location):
         for x in range(number_of_loops):
             new_file.write(client_socket.recv(1024))
         new_file.close()
-        print("why")
+        check_files_and_send(client_socket)
     except Exception:
         print("something went wrong")
         client_socket.send((str(ERROR)).encode())
@@ -249,8 +248,8 @@ def handel_thread(connection, ip, port, conn, cursor, max_buffer_size=5120):
                 send_file(connection, file_location)
 
             elif client_input[:2] == str(STORE_FILE):
-                file_location = client_input[2:]
-                store_file(connection, file_location)
+                file_name = client_input[2:]
+                store_file(connection, file_name)
 
             elif client_input[:2] == str(DELETE):
                 file_name = client_input[2:]
