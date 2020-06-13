@@ -27,39 +27,42 @@ user_directory = ""
 
 def register(s, conn, cursor, username, password, user_directory):
     global USERNAME
-    cursor.execute("SELECT ID FROM users_info")
-    all_ids = cursor.fetchall()
-    #checks if the db is empty
-    if not all_ids:
-        load_db(conn, cursor, [1,username,password])
-        s.send((str(CONFIRMATION)).encode())
-        USERNAME = username
-        user_directory = create_user_folder(user_directory)
-        user_directory = check_files_and_send(s, user_directory)
-    else:
-        try:
-            print(all_ids)
-            print(len(all_ids))
+    if (username != "" and password != "") or (" " not in username or " " not in password):
+        cursor.execute("SELECT ID FROM users_info")
+        all_ids = cursor.fetchall()
+        #checks if the db is empty
+        if not all_ids:
+            load_db(conn, cursor, [1,username,password])
+            s.send((str(CONFIRMATION)).encode())
+            USERNAME = username
+            user_directory = create_user_folder(user_directory)
+            user_directory = check_files_and_send(s, user_directory)
+        else:
             try:
-                last_ID = all_ids[len(all_ids)-1]
+                print(all_ids)
+                print(len(all_ids))
+                try:
+                    last_ID = all_ids[len(all_ids)-1]
+                except:
+                    last_ID = 0
+                cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
+                existing_name = cursor.fetchone()
+                print(existing_name)
+                if existing_name is None:
+                    #because last_ID is a tuple we need an extra [0] to get the correct value
+                    load_db(conn, cursor, [last_ID[0] + 1, username, password])
+                    s.send((str(CONFIRMATION)).encode())
+                    USERNAME = username
+                    user_directory = create_user_folder(user_directory)
+                    user_directory = check_files_and_send(s, user_directory)
+                    return user_directory
+                else:
+                    print("sorry the username is already used")
+                    s.send((str(ERROR)).encode())
             except:
-                last_ID = 0
-            cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
-            existing_name = cursor.fetchone()
-            print(existing_name)
-            if existing_name is None:
-                #because last_ID is a tuple we need an extra [0] to get the correct value
-                load_db(conn, cursor, [last_ID[0] + 1, username, password])
-                s.send((str(CONFIRMATION)).encode())
-                USERNAME = username
-                user_directory = create_user_folder(user_directory)
-                user_directory = check_files_and_send(s, user_directory)
-                return user_directory
-            else:
-                print("sorry the username is already used")
-                s.send((str(ERROR)).encode())
-        except:
-            print("something went wrong")
+                print("something went wrong")
+    else:
+        s.send((str(ERROR)).encode())
 
 
 def login(s, cursor, username, password, user_directory):
@@ -151,6 +154,7 @@ def send_file(client_socket, file_name, user_directory):
             for x in range(int(number_of_loops)):
                 file_parts = f.read(1024)
                 client_socket.send(file_parts)
+            time.sleep(1)
             client_socket.send((str(CONFIRMATION)).encode())
             user_directory = check_files_and_send(client_socket, user_directory)
     else:
@@ -211,22 +215,6 @@ def delete_file(client_socket, file_name, user_directory):
 
 def handel_thread(connection, ip, port, conn, cursor, user_directory, max_buffer_size=5120):
     active = True
-    client_input = receive_input(connection, max_buffer_size)
-    print(client_input)
-    print(type(client_input))
-    print(connection)
-    if client_input[:2] == str(REGISTER):
-        client_input = client_input[2:]
-        data = client_input.split(',')
-        print(data[0])
-        print(data[1])
-        user_directory = register(connection, conn, cursor, data[0], data[1], user_directory)
-
-    if client_input[:2] == str(LOGIN):
-        client_input = client_input[2:]
-        data = client_input.split(',')
-        user_directory = login(connection, cursor, data[0], data[1], user_directory)
-
     while active:
         print("waiting for request")
         client_input = receive_input(connection, max_buffer_size)
@@ -241,6 +229,18 @@ def handel_thread(connection, ip, port, conn, cursor, user_directory, max_buffer
                 message = "Connection " + ip + ": " + port + " closed"
                 print(message)
                 active = False
+
+            if client_input[:2] == str(REGISTER):
+                client_input = client_input[2:]
+                data = client_input.split(',')
+                print(data[0])
+                print(data[1])
+                user_directory = register(connection, conn, cursor, data[0], data[1], user_directory)
+
+            if client_input[:2] == str(LOGIN):
+                client_input = client_input[2:]
+                data = client_input.split(',')
+                user_directory = login(connection, cursor, data[0], data[1], user_directory)
 
             elif client_input[:2] == str(DOWNLOAD_FILE):
                 file_location = client_input[2:]
@@ -266,15 +266,9 @@ def handel_thread(connection, ip, port, conn, cursor, user_directory, max_buffer
                 change_file_name(connection, file_name, new_file_name, user_directory)
 
             else:
-                connection.send("oh oh something went wrong".encode())
                 print("there is a problem with the input")
-                connection.close()
-                active = False
-
         except:
             print("client ended the connection unexpectedly")
-            connection.close()
-            active = False
 
 
 def receive_input(connection, max_buffer_size):
@@ -291,7 +285,6 @@ def receive_input(connection, max_buffer_size):
         return decoded_input
     except Exception:
         print("ERROR")
-
 
 
 def main():
