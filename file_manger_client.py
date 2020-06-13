@@ -152,11 +152,11 @@ def main_window(s, username, password, window):
     sendfile = partial(file_explorer, s, username, password, data_table)
     Sendfile_Button = Button(data_table, text="Send file", command = sendfile)
 
+    downloadfile = partial(download_file, s, username, password, data_table)
+    Downloadfile_Button = Button(data_table, text="Download file", command = downloadfile)
 
-    Downloadfile_Button = Button(data_table, text="Download file")
-
-
-    Changename_Button = Button(data_table, text="Change name")
+    changename = partial(change_name, s, username, password, data_table)
+    Changename_Button = Button(data_table, text="Change name", command = changename)
 
     deletefile = partial(delete, s, username, password, data_table)
     Delete_Button = Button(data_table, text="Delete", command = deletefile)
@@ -220,12 +220,12 @@ def file_explorer(s, username, password, window):
 
     explorer_window.mainloop()
 
-def download_file(s):
-    print("What is the file path")
-    path = input()
-    file_format = path.split(".")[-1]
+def download_file(s, username, password, data_table):
+    print("What is the file name")
+    file_name = simpledialog.askstring(title = "name gathering", prompt ="what is the file name(include format)??")
+    file_format = file_name.split(".")[-1]
     print(file_format)
-    message = DICT['DOWNLOAD_FILE'] + path.encode()
+    message = DICT['DOWNLOAD_FILE'] + file_name.encode()
     s.send(message)
     message = s.recv(1024)
     print(message[:1])
@@ -238,27 +238,24 @@ def download_file(s):
         print(size + "M" + '\n' + "This is the file size. Do you still want to download?")
 
         answer = input()
-        if answer.upper() == "YES":
-            print("Ok lets start")
-            s.send(DICT['CONFIRMATION'])
+
+        print("Ok lets start")
+        s.send(DICT['CONFIRMATION'])
+        file_parts = s.recv(1024)
+        new_file = open("Server_file" + "." + file_format, "wb")
+        try:
+            new_file.write(file_parts)
+        except:
+            file_parts = ""
+        while file_parts != "":
             file_parts = s.recv(1024)
-            new_file = open("Server_file" + "." + file_format, "wb")
-            try:
-                new_file.write(file_parts)
-            except:
+            if file_parts == DICT['CONFIRMATION']:
+                print("The file was succsfuly transfered")
                 file_parts = ""
-            while file_parts != "":
-                file_parts = s.recv(1024)
-                if file_parts == DICT['CONFIRMATION']:
-                    print("The file was succsfuly transfered")
-                    file_parts = ""
-                    new_file.close()
-                else:
-                    new_file.write(file_parts)
-        elif answer.upper() == "NO":
-            print("Ok. Cancelling...")
-        else:
-            print("Sorry, this is not a valid request")
+                new_file.close()
+            else:
+                new_file.write(file_parts)
+
     else:
         print("not in user directory.\n")
 
@@ -289,22 +286,25 @@ def send_file(s):
         time.sleep(2)
 
 
-
-
-def change_name(s):
+def change_name(s, username, password, data_table):
     print("What is the path of the file you want to change the name of")
-    path = input()
+    path = simpledialog.askstring(title = "name gathering", prompt ="what is the name of the file you want to change(include format)?")
     file_format = path.split(".")[-1]
+    print(file_format)
     print("What is the new file name?")
-    new_name = input()
+    new_name = simpledialog.askstring(title = "name gathering", prompt ="what would you like to name your file?")
     new_name = new_name + "." + file_format
+    print(new_name)
     """adds a * in between the variables so i can seperate them later in the server"""
     message = DICT['CHANGE_NAME'] + path.encode() + '*'.encode() + new_name.encode()
+    print(message)
     s.send(message)
     message = s.recv(1024)
     if message == DICT['CONFIRMATION']:
         print("The name was succsfuly changed\n")
+        main_window(s, username, password, data_table)
     if message == DICT['ERROR']:
+        error_screen()
         print("Oh oh something went wrong. The file was not changed\n")
 
 
