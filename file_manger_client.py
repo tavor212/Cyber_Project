@@ -57,7 +57,7 @@ class SimpleTable(tk.Frame):
                     label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
                 else:
                     if place != file_names.__len__():
-                        label = tk.Label(self, text="%s/%s" % (file_names[place], str(file_sizes[place]) +  " " + "MB"),borderwidth=0, width=10)
+                        label = tk.Label(self, text="%s/%s" % (file_names[place], str(file_sizes[place]) +  " " + "Bytes"),borderwidth=0, width=10)
                         label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
                         current_row.append(label)
                         place += 1
