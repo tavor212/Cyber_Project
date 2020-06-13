@@ -7,7 +7,6 @@ import hashlib
 import json
 import time
 
-
 PORT = 1000
 HOST = '127.0.0.1'
 ALL_IP = '0.0.0.0'
@@ -27,12 +26,12 @@ user_directory = ""
 
 def register(s, conn, cursor, username, password, user_directory):
     global USERNAME
-    if (username != "" and password != "") or (" " not in username or " " not in password):
+    if (username != "" and password != "") :
         cursor.execute("SELECT ID FROM users_info")
         all_ids = cursor.fetchall()
-        #checks if the db is empty
+        # checks if the db is empty
         if not all_ids:
-            load_db(conn, cursor, [1,username,password])
+            load_db(conn, cursor, [1, username, password])
             s.send((str(CONFIRMATION)).encode())
             USERNAME = username
             user_directory = create_user_folder(user_directory)
@@ -42,14 +41,14 @@ def register(s, conn, cursor, username, password, user_directory):
                 print(all_ids)
                 print(len(all_ids))
                 try:
-                    last_ID = all_ids[len(all_ids)-1]
+                    last_ID = all_ids[len(all_ids) - 1]
                 except:
                     last_ID = 0
                 cursor.execute("SELECT user_name FROM users_info WHERE user_name == ?", (username,))
                 existing_name = cursor.fetchone()
                 print(existing_name)
                 if existing_name is None:
-                    #because last_ID is a tuple we need an extra [0] to get the correct value
+                    # because last_ID is a tuple we need an extra [0] to get the correct value
                     load_db(conn, cursor, [last_ID[0] + 1, username, password])
                     s.send((str(CONFIRMATION)).encode())
                     USERNAME = username
@@ -95,6 +94,7 @@ def login(s, cursor, username, password, user_directory):
         user_directory = check_files_and_send(s, user_directory)
         return user_directory
 
+
 def load_db(conn, cursor, data_list):
     # Fills the table
     print("in load")
@@ -124,7 +124,7 @@ def check_files_and_send(s, user_directory):
     print(file_names)
     file_size = [",", ]
     place = 0
-    for x in range (file_names.__len__()):
+    for x in range(file_names.__len__()):
         path = user_directory + "\\" + file_names[place]
         print(path)
         file_size.append(os.path.getsize(path))
@@ -144,7 +144,7 @@ def send_file(client_socket, file_name, user_directory):
         print("path exists")
         client_socket.send((str(CONFIRMATION)).encode())
         file_size = os.path.getsize(file_location)
-        number_of_loops = file_size/1024
+        number_of_loops = file_size / 1024
         number_of_loops = int(number_of_loops)
         if number_of_loops < 1:
             number_of_loops = 1
@@ -159,6 +159,7 @@ def send_file(client_socket, file_name, user_directory):
             user_directory = check_files_and_send(client_socket, user_directory)
     else:
         client_socket.send((str(ERROR)).encode())
+
 
 def store_file(client_socket, file_name, user_directory):
     print(file_name)
@@ -185,7 +186,7 @@ def store_file(client_socket, file_name, user_directory):
 def change_file_name(client_socket, file_name, new_file_name, user_directory):
     print("in change file")
     print(file_name)
-    print (user_directory + "\\" + file_name)
+    print(user_directory + "\\" + file_name)
     old_path = user_directory + "\\" + file_name
     if os.path.exists(old_path):
         """gets the dir of the file with dirname"""
@@ -269,7 +270,8 @@ def handel_thread(connection, ip, port, conn, cursor, user_directory, max_buffer
                 print("there is a problem with the input")
         except:
             print("client ended the connection unexpectedly")
-
+            connection.close()
+            active = False
 
 def receive_input(connection, max_buffer_size):
     try:
@@ -304,7 +306,7 @@ def main():
     s.listen(5)
     print("server started")
 
-    #starting db
+    # starting db
     conn = sqlite3.connect("users_info.db", check_same_thread=False)
 
     cursor = conn.cursor()
@@ -334,6 +336,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-        
-
 
