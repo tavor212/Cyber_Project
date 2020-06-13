@@ -99,13 +99,13 @@ def login_page(s):
 
 
 def validateRegistration(s, username, password, tkwindow):
-    if (username != "" and password != "") or (" " not in username or " " not in password):
+    if username != "" and password != "":
         message = DICT['REGISTER'] + (str(username.get())).encode() + ','.encode() + (str(password.get())).encode()
         print(message)
         s.send(message)
         message = s.recv(1024)
         if message == DICT['ERROR']:
-            print("username already taken")
+            print("username not valid or is taken")
             error_screen()
         elif message == DICT['CONFIRMATION']:
             active = False
@@ -286,6 +286,7 @@ def send_file(s):
     with open(path, 'rb') as f:
         for x in range(number_of_loops):
             file_parts = f.read(1024)
+            print(file_parts)
             s.send(file_parts)
             print("parts")
         #time.sleep(2)
