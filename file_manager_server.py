@@ -118,6 +118,7 @@ def check_files_and_send(s):
     place = 0
     for x in range (file_names.__len__()):
         path = USER_DIRECTORY + "\\" + file_names[place]
+        print(path)
         file_size.append(os.path.getsize(path))
         place += 1
     file_data = file_names + file_size
