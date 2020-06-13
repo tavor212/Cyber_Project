@@ -127,37 +127,26 @@ def check_files_and_send(s):
     s.send(file_data.encode())
 
 
-def send_file(client_socket, file_location):
-    check_files_and_send(client_socket)
-    print(os.path.dirname(os.path.realpath(file_location)))
+def send_file(client_socket, file_name):
     print(USER_DIRECTORY)
-    if os.path.dirname(os.path.realpath(file_location)) == USER_DIRECTORY:
-        if os.path.exists(file_location):
-            print("path exists")
-            client_socket.send((str(CONFIRMATION)).encode() + (str(os.path.getsize(file_location))).encode())
-            file_size = os.path.getsize(file_location)
-            number_of_loops = file_size/1024
-            number_of_loops = int(number_of_loops)
-            if number_of_loops < 1:
-                number_of_loops = 1
-            print(number_of_loops)
-            user_answer = client_socket.recv(1024)
-            print("recived:" + str(user_answer))
-            print(file_location)
-            print(user_answer[:1].decode())
-            if user_answer[:1].decode() == str(CONFIRMATION):
-                """reads the file 1024 bytes at a time."""
-                with open(file_location, 'rb') as f:
-                    for x in range(int(number_of_loops)):
-                        file_parts = f.read(1024)
-                        client_socket.send(file_parts)
-                    client_socket.send((str(CONFIRMATION)).encode())
-            else:
-                client_socket.send((str(ERROR)).encode())
-        else:
-            client_socket.send((str(ERROR)).encode())
+    if os.path.exists(USER_DIRECTORY + "\\" + file_name):
+        file_location = USER_DIRECTORY + "\\" + file_name
+        print("path exists")
+        client_socket.send((str(CONFIRMATION)).encode())
+        file_size = os.path.getsize(file_location)
+        number_of_loops = file_size/1024
+        number_of_loops = int(number_of_loops)
+        if number_of_loops < 1:
+            number_of_loops = 1
+        print(number_of_loops)
+        """reads the file 1024 bytes at a time."""
+        with open(file_location, 'rb') as f:
+            for x in range(int(number_of_loops)):
+                file_parts = f.read(1024)
+                client_socket.send(file_parts)
+            client_socket.send((str(CONFIRMATION)).encode())
+            check_files_and_send(client_socket)
     else:
-        print("not in user directory")
         client_socket.send((str(ERROR)).encode())
 
 def store_file(client_socket, file_name):
