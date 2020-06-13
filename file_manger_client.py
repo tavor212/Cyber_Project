@@ -222,27 +222,17 @@ def file_explorer(s, username, password, window):
 
 def download_file(s, username, password, data_table):
     print("What is the file name")
-    file_name = simpledialog.askstring(title = "name gathering", prompt ="what is the file name(include format)??")
+    file_name = simpledialog.askstring(title = "name gathering", prompt ="what is the file name you want to download(include format)?")
     file_format = file_name.split(".")[-1]
     print(file_format)
     message = DICT['DOWNLOAD_FILE'] + file_name.encode()
     s.send(message)
     message = s.recv(1024)
-    print(message[:1])
-    if message[:1] == DICT['CONFIRMATION']:
-        """calculates the file size in megabytes"""
-        size = message[1:].decode()
-        size = int(size)
-        size = size / 1000
-        size = str(size)
-        print(size + "M" + '\n' + "This is the file size. Do you still want to download?")
-
-        answer = input()
-
+    print(message)
+    if message == DICT['CONFIRMATION']:
         print("Ok lets start")
-        s.send(DICT['CONFIRMATION'])
         file_parts = s.recv(1024)
-        new_file = open("Server_file" + "." + file_format, "wb")
+        new_file = open(file_name, "wb")
         try:
             new_file.write(file_parts)
         except:
@@ -253,12 +243,13 @@ def download_file(s, username, password, data_table):
                 print("The file was succsfuly transfered")
                 file_parts = ""
                 new_file.close()
+                main_window(s, username, password, data_table)
             else:
                 new_file.write(file_parts)
 
     else:
         print("not in user directory.\n")
-
+        error_screen()
 
 def send_file(s):
     print("What is the path of the file you want to send?")
